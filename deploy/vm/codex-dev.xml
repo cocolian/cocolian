@@ -1,0 +1,44 @@
+<domain type='kvm'>
+  <name>codex-dev</name>
+  <uuid>4b86210a-9456-4a76-8bcc-15cfd8d5e255</uuid>
+  <memory unit='MiB'>16384</memory>
+  <currentMemory unit='MiB'>16384</currentMemory>
+  <vcpu placement='static'>4</vcpu>
+  <cputune><shares>1024</shares></cputune>
+  <os>
+    <type arch='x86_64' machine='q35'>hvm</type>
+    <loader readonly='yes' type='pflash'>/usr/share/OVMF/OVMF_CODE_4M.fd</loader>
+    <nvram template='/usr/share/OVMF/OVMF_VARS_4M.fd'>/var/lib/libvirt/qemu/nvram/codex-dev_VARS.fd</nvram>
+    <boot dev='hd'/>
+  </os>
+  <features><acpi/><apic/></features>
+  <cpu mode='host-passthrough' check='none' migratable='off'>
+    <topology sockets='1' dies='1' cores='4' threads='1'/>
+  </cpu>
+  <clock offset='utc'/>
+  <on_poweroff>destroy</on_poweroff><on_reboot>restart</on_reboot><on_crash>restart</on_crash>
+  <devices>
+    <emulator>/usr/bin/qemu-system-x86_64</emulator>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='qcow2' cache='none' io='native'/>
+      <source file='/var/lib/libvirt/images/codex-dev.qcow2'/><target dev='vda' bus='virtio'/>
+    </disk>
+    <disk type='file' device='disk'>
+      <driver name='qemu' type='raw'/><source file='/var/lib/libvirt/images/codex-dev-seed.iso'/>
+      <target dev='vdb' bus='virtio'/><readonly/>
+    </disk>
+    <interface type='direct'>
+      <mac address='52:54:00:42:15:01'/><source dev='enp1s0' mode='bridge'/><model type='virtio'/>
+    </interface>
+    <interface type='network'>
+      <mac address='52:54:00:42:15:02'/><source network='codex-dev-mgmt'/><model type='virtio'/>
+    </interface>
+    <serial type='pty'><target port='0'/></serial>
+    <console type='pty'><target type='serial' port='0'/></console>
+    <channel type='unix'><target type='virtio' name='org.qemu.guest_agent.0'/></channel>
+    <graphics type='vnc' port='-1' autoport='yes' listen='127.0.0.1'/>
+    <video><model type='virtio' heads='1' primary='yes'/></video>
+    <memballoon model='virtio'/>
+    <rng model='virtio'><backend model='random'>/dev/urandom</backend></rng>
+  </devices>
+</domain>

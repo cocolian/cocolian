@@ -1,0 +1,7 @@
+build/
+upstream/
+work/*key*
+__pycache__/
+
+work/dev-vm/
+outputs/dev-vm-access.txt

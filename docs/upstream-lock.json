@@ -1,0 +1,18 @@
+{
+  "collabora-engine": {
+    "commit": "505ac0e4de0c4159c5d84120348b4216efdb14c5",
+    "url": "https://github.com/CollaboraOnline/online.mirror.git"
+  },
+  "collabora-online-sdk-examples": {
+    "commit": "dc55f596ec9bad460a2aac46eafac658b945e9e7",
+    "url": "https://github.com/CollaboraOnline/collabora-online-sdk-examples.git"
+  },
+  "gotenberg": {
+    "commit": "db150b773322dc5b9c1363eef81d85c27f1e38d0",
+    "url": "https://github.com/gotenberg/gotenberg.git"
+  },
+  "collabora-online": {
+    "commit": "b76eddb352f05faa6896e8600f401b2ba13beb26",
+    "url": "https://github.com/CollaboraOnline/online.git"
+  }
+}
