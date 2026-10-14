@@ -20,3 +20,9 @@
 ## 验证
 - 验证登录、编辑器启动、WOPI 保存和 DOCX 转 PDF；必要时使用 Playwright。
 - 对照发布前后其他 Namespace 的 Pod UID、镜像、就绪与重启次数，区分已验证结果和未验收项。
+
+## 开发机构建
+- 项目位于 <workspace>/cocolian。Python 验证环境为 .venv，Chrome 使用系统安装的 google-chrome。
+- OFFICE_IMAGE_NAME=docker.io/cocolian/office-portal:<tag> python3 scripts/build-oci.py 在本机生成 OCI 包；scripts/import-office-image.sh 导入镜像后返回可用于 Deployment 的摘要。
+- scripts/vm 为安装引导与运维脚本；除明确说明外，不要在开发 VM 中重跑宿主机或新建虚拟机脚本。
+- 上游源码快照已迁移，省略 .git 对象和 node_shrinkpack npm 缓存；原始提交参考 docs/upstream-lock.json，完整引擎源码编译另行准备。

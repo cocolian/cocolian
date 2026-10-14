@@ -5,3 +5,5 @@ __pycache__/
 
 work/dev-vm/
 outputs/dev-vm-access.txt
+
+.venv/
