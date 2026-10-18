@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Run in the cocolian-office workspace on codex-dev after fetching the pinned translations.
 set -euo pipefail
-root=${COCOLIAN_OFFICE_ROOT:-/home/codex/projects/cocolian-office}
+root=${COCOLIAN_OFFICE_ROOT:-$(cd "$(dirname "$0")/../../cocolian-office" && pwd)}
 source_root="$root/src/online.mirror"
 build="$root/build/source-19b4efae7fb8"
 translations="$source_root/engine/translations"
