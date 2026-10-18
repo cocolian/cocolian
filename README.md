@@ -60,3 +60,7 @@ Office 的 Nginx 访问日志仅记录路径、不记录查询参数和认证头
 k3s 回退清单：`/var/lib/office-lab/backups/domain-20261014/rollback-resources.json`（仅原 Collabora、WOPI Deployment 和 lab-source ConfigMap）。回退时先删除 `office-lab/office` Ingress 和 `office-lab/office-ingress` NetworkPolicy，再应用该清单；最后恢复边缘备份、移除独立 Office 配置，经 `nginx -t` 成功后平滑重载。回退前需检查共享文件是否存在其他后续改动。无需删除 Namespace、PVC、Secret 或测试文档。
 
 本地最终清单为 `outputs/office-lab.yaml`，不含 Secret；镜像使用原固定摘要和 `imagePullPolicy: Never`，因此重建节点前须准备相同镜像缓存。
+
+## Mac 开发
+
+本机开发目录与迁移说明见 [docs/mac-development.md](docs/mac-development.md)。

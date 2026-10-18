@@ -19,7 +19,7 @@ def manifest(d):
 m=manifest(index['manifests'][0]); config=read(m['config'])
 buf=io.BytesIO()
 with tarfile.open(fileobj=buf,mode='w') as t:
- for filename in ('server.py','editor.json'):
+ for filename in ('server.py','editor.json','file_open.py','file-open.js','file-open.css','file-open.svg'):
   data=(root/'apps/office-portal'/filename).read_bytes()
   info=tarfile.TarInfo('app/'+filename);info.size=len(data);info.mode=0o644;info.uid=1000;info.gid=1000;info.mtime=0
   t.addfile(info,io.BytesIO(data))
@@ -41,5 +41,5 @@ with tarfile.open(root/'build/office-portal.tar','w') as t:
  for path,data in blobs.items():
   if path not in ('index.json','oci-layout') and not path.startswith('blobs/'):continue
   info=tarfile.TarInfo(path);info.size=len(data);info.mtime=0;t.addfile(info,io.BytesIO(data))
-(root/'build/image.json').write_text(json.dumps({'image':name,'digest':d['digest'],'source_sha256':hashlib.sha256((root/'apps/office-portal/server.py').read_bytes()+(root/'apps/office-portal/editor.json').read_bytes()).hexdigest()},indent=2))
+(root/'build/image.json').write_text(json.dumps({'image':name,'digest':d['digest'],'source_sha256':hashlib.sha256(b''.join((root/'apps/office-portal'/f).read_bytes() for f in ('server.py','editor.json','file_open.py','file-open.js','file-open.css','file-open.svg'))).hexdigest()},indent=2))
 print((root/'build/image.json').read_text())

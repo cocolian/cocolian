@@ -7,3 +7,16 @@ work/dev-vm/
 outputs/dev-vm-access.txt
 
 .venv/
+
+# Local development data and credentials
+.DS_Store
+__pycache__/
+*.py[cod]
+.venv/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+.kube/
+node_modules/

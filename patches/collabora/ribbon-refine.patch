@@ -1,0 +1,110 @@
+diff --git a/browser/css/notebookbar.css b/browser/css/notebookbar.css
+index d279a0af7ae..8595b2edc76 100644
+--- a/browser/css/notebookbar.css
++++ b/browser/css/notebookbar.css
+@@ -1353,3 +1353,105 @@ label.notebookbar.ui-checkbox-label {
+ 	height: 1px;
+ 	margin: var(--spacing-xs) 0;
+ }
++
++/* Desktop ribbon: restrained type and spacing, with all captions retained. */
++@media (min-width: 768px) and (pointer: fine) {
++ .hasnotebookbar > #toolbar-row,
++ .hasnotebookbar .notebookbar-scroll-wrapper,
++ .hasnotebookbar #NotebookBar.notebookbar,
++ .hasnotebookbar .ui-overflow-manager > .notebookbar:not(.ui-separator),
++ .hasnotebookbar .ui-overflow-manager:not(:has(.ui-overflow-group)) { height: 76px; }
++ .hasnotebookbar .notebookbar {
++  --btn-size: 26px;
++  --btn-img-size: 20px;
++  --header-font-size: 12px;
++  --default-font-size: 12px;
++  --spacing-s: 3px;
++  --notebookbar-element-height: 60px;
++ }
++ .hasnotebookbar button.ui-tab.notebookbar {
++  font-size: 14px;
++  padding-inline: 11px;
++  font-weight: 400;
++ }
++ .hasnotebookbar button.ui-tab.notebookbar.selected { font-weight: 600; }
++ .hasnotebookbar .unotoolbutton.notebookbar .unolabel {
++  font-size: 12px;
++  line-height: 16px;
++  padding-inline: 4px !important;
++ }
++ .hasnotebookbar .notebookbar.ui-overflow-group-label {
++  font-size: 11px;
++ }
++ .hasnotebookbar .notebookbar input,
++ .hasnotebookbar .notebookbar select,
++ .hasnotebookbar .notebookbar .ui-combobox-entry {
++  font-size: 12px;
++ }
++ .hasnotebookbar .notebookbar .unobutton { border-radius: 3px; }
++ .hasnotebookbar .notebookbar .ui-combobox,
++ .hasnotebookbar .notebookbar .ui-listbox {
++  min-height: 26px;
++  height: 26px;
++  box-sizing: border-box;
++ }
++ .hasnotebookbar #stylesview.notebookbar {
++  width: clamp(300px, 36vw, 596px);
++  min-width: 280px !important;
++  height: 60px;
++  grid-template-columns: none;
++  grid-template-rows: 60px;
++  grid-auto-columns: 96px;
++  grid-auto-flow: column;
++  gap: 4px;
++  justify-content: start;
++ }
++ .hasnotebookbar #stylesview.notebookbar .ui-iconview-entry {
++  width: 96px;
++  height: 60px;
++  min-width: 0;
++  padding: 5px;
++  border-radius: 3px;
++  display: flex;
++  flex-direction: column;
++  justify-content: center;
++  overflow: hidden;
++ }
++ .hasnotebookbar #stylesview.notebookbar .icon-view-item-container {
++  min-width: 0;
++  max-width: 100%;
++  overflow: hidden;
++ }
++ .hasnotebookbar #stylesview.notebookbar img {
++  width: 80px !important;
++  max-width: 100%;
++  height: 24px !important;
++  object-fit: contain;
++ }
++ .hasnotebookbar #stylesview.notebookbar span:not(.ui-iconview-entry-title) {
++  font-size: 15px !important;
++  line-height: 22px !important;
++  white-space: nowrap;
++ }
++ .hasnotebookbar #stylesview.notebookbar .ui-iconview-entry-title {
++  display: block;
++  font-size: 11px;
++  line-height: 16px;
++  white-space: nowrap;
++  overflow: hidden;
++  text-overflow: ellipsis;
++  max-width: 100%;
++ }
++ .hasnotebookbar #stylesview.notebookbar .ui-iconview-entry.selected {
++  border-color: #80a7d8;
++  box-shadow: inset 0 0 0 1px #d6e5f6;
++ }
++ .hasnotebookbar #stylesview.notebookbar .ui-iconview-entry:not(.selected):hover {
++  border-color: #a6bedb;
++  box-shadow: none;
++ }
++ [data-theme='light'] .hasnotebookbar .notebookbar .ui-combobox input {
++  background-color: #fff !important;
++ }
++}
++

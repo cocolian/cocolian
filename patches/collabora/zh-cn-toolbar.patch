@@ -1,0 +1,68 @@
+diff --git a/browser/po/ui-zh_CN.po b/browser/po/ui-zh_CN.po
+index 02303bf9a35..a7a16a9f8e8 100644
+--- a/browser/po/ui-zh_CN.po
++++ b/browser/po/ui-zh_CN.po
+@@ -4323,7 +4323,7 @@ msgstr "在线帮助"
+ #: src/control/Control.Menubar.ts:834 src/control/Control.Menubar.ts:1152
+ #: src/control/Control.NotebookbarWriter.js:541
+ msgid "Show tour"
+-msgstr ""
++msgstr "功能导览"
+ 
+ #: src/control/Control.Menubar.ts:455 src/control/Control.Menubar.ts:668
+ #: src/control/Control.Menubar.ts:836 src/control/Control.Menubar.ts:1154
+@@ -9547,3 +9547,7 @@ msgstr ""
+ #, fuzzy
+ #~ msgid "Toggle Page Orientation"
+ #~ msgstr "文字方向"
++
++#: src/control/Control.JSDialogBuilder.js
++msgid "Hanging Indent"
++msgstr "悬挂缩进"
+diff --git a/browser/src/control/Control.JSDialogBuilder.js b/browser/src/control/Control.JSDialogBuilder.js
+index 308dc15a581..e916bd20924 100644
+--- a/browser/src/control/Control.JSDialogBuilder.js
++++ b/browser/src/control/Control.JSDialogBuilder.js
+@@ -1407,6 +1407,14 @@ window.L.Control.JSDialogBuilder = window.L.Control.extend({
+ 
+ 	// TODO: move to jsdialog/Widget.Toolitem.ts
+ 	_unoToolButton: function(parentContainer, data, builder, options) {
++		// Resolve this newly moved core command through the browser's locale catalog.
++		if (data.command === '.uno:HangingIndent') {
++			data.text = _('Hanging Indent');
++			if (data.tooltip === 'Hanging Indent')
++				data.tooltip = data.text;
++			if (data.aria && data.aria.label === 'Hanging Indent')
++				data.aria.label = data.text;
++		}
+ 		var button = null;
+ 
+ 		var controls = {};
+diff --git a/browser/src/control/Control.TopToolbar.js b/browser/src/control/Control.TopToolbar.js
+index c9292e9067b..f82c9976f1d 100644
+--- a/browser/src/control/Control.TopToolbar.js
++++ b/browser/src/control/Control.TopToolbar.js
+@@ -167,8 +167,8 @@ class TopToolbar extends JSDialog.Toolbar {
+ 			{type: 'toolitem',  id: 'strikeout', text: _UNO('.uno:Strikeout'), command: '.uno:Strikeout', accessibility: { focusBack: true, combination: '4' }},
+ 		];
+ 		const fontColorGroup = [
+-			{type: 'colorlistbox',  id: 'fontcolorwriter:ColorPickerMenu', command: '.uno:FontColor', text: _UNO('.uno:FontColor'), visible: false, lockUno: '.uno:FontColor', icon: 'compact_fontcolor.svg', accessibility: { focusBack: true, combination: 'FC' }},
+-			{type: 'colorlistbox',  id: 'fontcolor:ColorPickerMenu', command: '.uno:Color', text: _UNO('.uno:FontColor'), lockUno: '.uno:FontColor', icon: 'compact_fontcolor.svg', accessibility: { focusBack: true, combination: 'FC' }},
++			{type: 'colorlistbox',  id: 'fontcolorwriter:ColorPickerMenu', command: '.uno:FontColor', text: _UNO('.uno:FontColor', 'text'), visible: false, lockUno: '.uno:FontColor', icon: 'compact_fontcolor.svg', accessibility: { focusBack: true, combination: 'FC' }},
++			{type: 'colorlistbox',  id: 'fontcolor:ColorPickerMenu', command: '.uno:Color', text: _UNO('.uno:FontColor', 'text'), lockUno: '.uno:FontColor', icon: 'compact_fontcolor.svg', accessibility: { focusBack: true, combination: 'FC' }},
+ 			{type: 'colorlistbox',  id: 'backcolor:ColorPickerMenu', command: '.uno:CharBackColor', text: _UNO('.uno:CharBackColor', 'text'), visible: false, lockUno: '.uno:CharBackColor', icon: 'compact_backcolor.svg', accessibility: { focusBack: true, combination: 'HC' }},
+ 			{type: 'colorlistbox',  id: 'backgroundcolor:ColorPickerMenu', command: '.uno:BackgroundColor', text: _UNO('.uno:BackgroundColor'), visible: false, lockUno: '.uno:BackgroundColor', icon: 'compact_fillcolor.svg', accessibility: { focusBack: true, combination: 'BC' }},
+ 		];
+diff --git a/browser/src/control/Notebookbar.WriterReferencesTab.ts b/browser/src/control/Notebookbar.WriterReferencesTab.ts
+index bd61a177763..f7dcf123965 100644
+--- a/browser/src/control/Notebookbar.WriterReferencesTab.ts
++++ b/browser/src/control/Notebookbar.WriterReferencesTab.ts
+@@ -329,7 +329,7 @@ class WriterReferencesTab implements NotebookbarTab {
+ 									{
+ 										id: 'references-inset-page-number-field',
+ 										type: 'toolitem',
+-										text: _UNO('.uno:InsertPageNumberField'),
++										text: _UNO('.uno:InsertPageNumberField', 'text'),
+ 										command: '.uno:InsertPageNumberField',
+ 										accessibility: {
+ 											focusBack: true,

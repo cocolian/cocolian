@@ -1,0 +1,52 @@
+diff --git a/source/zh-CN/officecfg/registry/data/org/openoffice/Office/UI.po b/source/zh-CN/officecfg/registry/data/org/openoffice/Office/UI.po
+index d5eaf0e4..30994279 100644
+--- a/source/zh-CN/officecfg/registry/data/org/openoffice/Office/UI.po
++++ b/source/zh-CN/officecfg/registry/data/org/openoffice/Office/UI.po
+@@ -41607,3 +41607,9 @@ msgctxt ""
+ "value.text"
+ msgid "Fontwork Shape"
+ msgstr "艺术字形状"
++
++#. Local completion for a command moved into GenericCommands.
++#: GenericCommands.xcu
++msgctxt "GenericCommands.xcu\n..GenericCommands.UserInterface.Commands..uno:HangingIndent\nLabel\nvalue.text"
++msgid "Hanging Indent"
++msgstr "悬挂缩进"
+diff --git a/source/zh-CN/svx/messages.po b/source/zh-CN/svx/messages.po
+index e92efd78..67fede79 100644
+--- a/source/zh-CN/svx/messages.po
++++ b/source/zh-CN/svx/messages.po
+@@ -21249,3 +21249,33 @@ msgstr "150%"
+ msgctxt "zoommenu|200"
+ msgid "200%"
+ msgstr "200%"
++
++#: svx/uiconfig/ui/sidebarparagraph.ui
++msgctxt "sidebarparagraph|aboveparaspacinglabel"
++msgid "Above:"
++msgstr "段落上方："
++
++#: svx/uiconfig/ui/sidebarparagraph.ui
++msgctxt "sidebarparagraph|belowparaspacinglabel"
++msgid "Below:"
++msgstr "段落下方："
++
++#: svx/uiconfig/ui/sidebarparagraph.ui
++msgctxt "sidebarparagraph|linespacinglabel"
++msgid "Line Spacing:"
++msgstr "行距："
++
++#: svx/uiconfig/ui/sidebarparagraph.ui
++msgctxt "sidebarparagraph|beforetextindentlabel"
++msgid "Before:"
++msgstr "文本之前："
++
++#: svx/uiconfig/ui/sidebarparagraph.ui
++msgctxt "sidebarparagraph|aftertextindentlabel"
++msgid "After:"
++msgstr "文本之后："
++
++#: svx/uiconfig/ui/sidebarparagraph.ui
++msgctxt "sidebarparagraph|firstlineindentlabel"
++msgid "First:"
++msgstr "首行："

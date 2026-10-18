@@ -1,0 +1,14 @@
+{
+  "repository": "https://gerrit.collaboraoffice.com/translations",
+  "branch": "distro/collabora/co-26.04",
+  "commit": "17fb3698d5e86169d44076f7a992c572f8f780f1",
+  "languages": [
+    "en-US",
+    "zh-CN"
+  ],
+  "ui_revision": "42204b6034",
+  "browser_patch_sha256": "7ae6bd00a9d2edb70c824feee2d2510d2647935ed9f70e8feb8f696f7bb81a62",
+  "translation_patch_sha256": "a697bbca827205bc0951fc19741ae87f21b0d109b1fda7ca1c83a9552ba1b750",
+  "image": "res.cocolian.cn/cocolian/collabora-source@sha256:e27d0b09078d23c2d8cb707aa3cda97e3488ede2a2bf97fa4fa1f594266b817d",
+  "engine_reused_from": "zh-cn-20261017-final"
+}

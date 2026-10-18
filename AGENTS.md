@@ -4,7 +4,8 @@
 所有字段（含表头、数字和空值）使用双引号；用标准序列化工具，例如 Python csv.QUOTE_ALL。双引号转义为两个双引号。导出后用标准解析器回读并核对记录。
 
 ## 项目
-- apps/office-portal 是门户和 WOPI Host；editor.json 控制语言与紧凑工具栏。
+- apps/office-portal 是门户和 WOPI Host；editor.json 控制语言与默认紧凑工具栏（ui_mode=compact）。
+- 所有修改先落在本地源码或配置，再编译打包、推送镜像仓库并更新 k3s；不直接修改 Pod 文件。
 - upstream 保存官方源码；Collabora main 与线上 CODE 25.04 不同，不能直接替换其浏览器资源。
 - deploy、scripts、docs 分别保存部署、构建验证和操作说明。
 - 不把密码、访问 token、kubeconfig 或 SSH 私钥提交到 Git。
@@ -14,7 +15,7 @@
 - k3s 部署默认仅操作 office-lab。其他 Namespace 先只读检查；写入生产环境需要用户明确授权。
 - 先检查 Pod、日志、事件、配额和资源，再决定修改。
 - 保留原镜像摘要、Deployment 配置和文档卷。发布验证失败时回滚，不删除 PVC 作为排错手段。
-- 当前镜像拉取策略为 Never，新镜像须先导入宿主机 containerd，再更新 Deployment 摘要。
+- Collabora、转换服务和门户使用 registry.example.invalid 的不可变镜像摘要及 IfNotPresent；新镜像先推送仓库并确认节点拉取，再更新 Deployment。保留的 gateway 镜像仍为 Never。
 - 不修改宿主机 DNS、默认路由或代理；开发机自己的工具代理可按 docs 配置。
 
 ## 验证

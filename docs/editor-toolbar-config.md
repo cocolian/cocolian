@@ -1,3 +1,11 @@
+标签栏视觉微调：2026-10-17 已按 Word 风格收紧字号、间距和样式卡片，默认视图不变，见 [调整记录](ribbon-refine-20261017.md)。
+
+中文补全：2026-10-17 已补齐引擎语言包和命令翻译，默认仍为 compact，见 [工具栏中文补全](toolbar-zh-cn-20261017.md)。
+
+最新状态：2026-10-17 已撤回标签栏和隐藏标题修改，默认恢复 compact，见 ui-full-rollback-20261017.md。下文为历史记录。
+
+最新状态：2026-10-16 默认已改为 tabbed，图标名称改为悬浮提示，见 [tabbed-icons-20261016.md](tabbed-icons-20261016.md)。下文 compact 为之前版本的记录。
+
 # 中文与紧凑工具栏
 
 配置文件：apps/office-portal/editor.json。
