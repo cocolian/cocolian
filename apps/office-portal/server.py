@@ -1,5 +1,6 @@
 import re, uuid, mimetypes, shutil
 import file_open
+import render_profile
 import os, json, hashlib, threading, time, urllib.parse, urllib.request, html, zipfile, io, hmac
 from http.cookies import SimpleCookie, CookieError
 from http.server import ThreadingHTTPServer, BaseHTTPRequestHandler
@@ -97,7 +98,7 @@ class Handler(BaseHTTPRequestHandler):
             except FileNotFoundError: return self.reply(404,{'error':'文件不存在'})
             token=next(t for t,u in TOKENS.items() if u==user)
             import xml.etree.ElementTree as ET
-            discovery=ET.fromstring(urllib.request.urlopen('http://collabora:9980/hosting/discovery',timeout=10).read())
+            discovery=ET.fromstring(urllib.request.urlopen(render_profile.discovery_url(file_id),timeout=10).read())
             action=next((a for a in discovery.iter('action') if a.get('ext')==document.suffix[1:].lower() and a.get('name')=='edit'),None)
             if action is None: return self.reply(400,{'error':'编辑器暂不支持此格式'})
             url=urllib.parse.urlsplit(action.get('urlsrc'))
