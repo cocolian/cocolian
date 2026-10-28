@@ -1,5 +1,8 @@
 # Mac 开发工作区
 
+> 地址和目录均为通用示例，实际部署值应由自己的私有配置提供。
+
+
 门户仓库：`<workspace>/cocolian`。引擎工作区：`<workspace>/cocolian-office`。两个工作区均由 GitHub 克隆。
 
 - 门户、WOPI Host 与 UI 资源在 `apps/office-portal`。

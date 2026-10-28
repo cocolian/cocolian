@@ -1,5 +1,8 @@
 # 本地源码部署记录（2026-10-14）
 
+> 地址和目录均为通用示例，实际部署值应由自己的私有配置提供。
+
+
 已在 office-lab 发布自有门户/WOPI 服务，入口 https://office.example.invalid。
 
 - 本地 OCI 打包产物：build/office-portal.tar。

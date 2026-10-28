@@ -1,5 +1,8 @@
 # 本地源码与部署目录
 
+> 地址和目录均为通用示例，实际部署值应由自己的私有配置提供。
+
+
 - apps/office-portal：自有门户、WOPI Host、Dockerfile。
 - upstream：GitHub 上游仓库；固定提交记录，不在此目录直接改动。
 - deploy/k8s：部署清单与原版本备份。
