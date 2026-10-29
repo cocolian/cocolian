@@ -1,0 +1,176 @@
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cocolian Office · 开源云文档中台</title><link rel="stylesheet" href="/project-homepage.css"></head><body><header><a class="brand" href="/">Cocolian Office</a><nav><a href="https://github.com/cocolian/online.mirror">公开源码</a><a class="button" href="/login">试用登录</a></nav></header><main><article><h1>Cocolian Office 国产化文档渲染与云文档中台</h1>
+<p>Cocolian Office 的目标是构建国产化的 LibreOffice，建设可自主构建、可私有部署的云文档中台，让中文文档在在线编辑、预览和 PDF 转换时，获得与 Microsoft Office Word 尽可能一致的渲染效果。</p>
+<p>项目基于 LibreOffice 和 Collabora Online 持续开发，重点改进中文字体、行距、换行、分页、表格和中英文混排。我们追求最佳的中文文档与 Word 渲染一致性，并以对照文档和回归测试逐项推进。</p>
+<p><strong>本项目开源，可按各组件许可证免费使用、部署和接入。欢迎贡献代码、接入业务系统，也欢迎捐款支持持续维护。</strong></p>
+<h2>项目能力与兼容性</h2>
+<ul>
+<li>通过浏览器在线编辑和协同，通过 WOPI 对接文档存储、鉴权和保存。</li>
+<li>预览 DOCX 和转换 PDF，为业务应用提供文档处理能力。</li>
+<li>持续修复中文字体、GB2312 和 GBK 字体匹配、段落行距、网格、表格跨页和混排规则。</li>
+<li>从源码构建渲染引擎与在线服务，使用容器部署，并通过自动检查验证发布。</li>
+</ul>
+<p>当前以 Mac 版 Microsoft Word 导出的 PDF 为主要对照，核对字体、文字位置、换行和分页。复杂文档仍可能存在布局差异，兼容性工作会持续推进。</p>
+<h2>开始使用与接入</h2>
+<pre><code class="language-bash">git clone --filter=blob:none --branch main https://github.com/cocolian/online.mirror.git
+cd online.mirror
+</code></pre>
+<ul>
+<li><code>engine/</code>：配套文档渲染引擎，承载主要中文排版修复。</li>
+<li><code>browser/</code>、<code>wsd/</code>：在线编辑前端与服务端。</li>
+<li><a href="https://github.com/cocolian/online.mirror/blob/main/cocolian/office-lab/README.md">cocolian/office-lab</a>：项目集成、构建和部署资料。</li>
+<li><a href="https://github.com/cocolian/online.mirror/tree/main/cocolian/office-lab/apps/office-portal">office-portal</a>：文档门户与 WOPI Host 实现。</li>
+<li><a href="https://github.com/cocolian/online.mirror/tree/main/cocolian/office-lab/deploy/source-build/">源码构建配方</a>：源码构建及容器部署说明。</li>
+</ul>
+<p>欢迎文档管理系统、知识库和业务平台接入。可以通过 WOPI 集成文档打开、编辑与保存，通过转换接口集成 DOCX 转 PDF。源码构建使用 Linux 环境；文档中的部署配置需按自己的环境调整。</p>
+<p>第三方字体不随本仓库分发。部署时请提供有权使用的字体，并保持对照环境和服务端字体版本一致。</p>
+<h2>贡献与支持</h2>
+<p>欢迎贡献排版修复、合成测试、文档和系统集成。反馈渲染差异时，请说明字体、Word 版本、页面设置和复现步骤，优先提供可公开的最小合成案例。</p>
+<p>真实业务文档、私有字体、生成的 PDF、构建产物和凭据应保存在仓库外。提交前请确认文件名和内容具备公开权限。</p>
+<p><strong>欢迎捐款支持，可通过 <a href="https://github.com/cocolian/online.mirror/issues">GitHub Issue</a> 联系项目维护者。</strong> 捐款将支持中文排版兼容性开发、回归测试和构建资源；也欢迎提供算力、测试环境和集成反馈。捐款不影响按许可证免费使用开源代码。</p>
+<h2>项目介绍</h2>
+<ul>
+<li><a href="https://github.com/cocolian/online.mirror/blob/main/cocolian/office-lab/docs/community/introduction-zh.md">项目介绍文章</a></li>
+<li><a href="https://github.com/cocolian/online.mirror/blob/main/cocolian/office-lab/docs/community/social-posts.md">X 和其他媒体文案</a></li>
+</ul>
+<p>Cocolian Office is an open source cloud document platform based on LibreOffice and Collabora Online. We focus on Chinese document rendering, aiming for the closest possible fidelity to Microsoft Word across online editing, preview and PDF conversion. The project can be used and integrated free of charge under the applicable component licenses. Contributions, integrations and donations are welcome.</p>
+<h2>许可证与上游</h2>
+<p>感谢 LibreOffice、Collabora Online 及其社区。相关源码保留上游许可证与版权声明；使用、修改和分发时，请遵守 <a href="https://github.com/cocolian/online.mirror/blob/main/COPYING">COPYING</a> 及各组件的许可文件。上游介绍和贡献流程如下。</p>
+<h2>Collabora Online and Collabora Office 上游说明</h2>
+<blockquote>
+<p>[!IMPORTANT]
+<strong>The CollaboraOnline/online.mirror repository on GitHub is a read-only mirror.</strong>
+Collabora Online and Collabora Office are developed on our Gerrit
+instance at <strong>https://gerrit.collaboraoffice.com</strong>; the GitHub repository only mirrors that
+source code.</p>
+<ul>
+<li><strong>Code contributions</strong> go through Gerrit, not GitHub. Pull requests are disabled here; see
+  <a href="https://github.com/cocolian/online.mirror/blob/main/CONTRIBUTING.md#contributing-to-source-code">CONTRIBUTING.md</a> for how to submit a patch.</li>
+<li><strong>Report issues</strong> at the <a href="https://github.com/CollaboraOnline/online/issues/new/choose">CollaboraOnline/online issue tracker</a>.</li>
+</ul>
+</blockquote>
+<p><a href="https://gerrit.collaboraoffice.com"><img alt="Development: Gerrit" src="https://img.shields.io/badge/Development-Gerrit-orange?logo=git" title="Code development and review happen on Gerrit. GitHub pull requests are disabled." loading="lazy"></img></a>
+<a href="https://www.collaboraoffice.com/downloads/CODA-Hd7wwbJWxm/"><img alt="Collabora Office Development Preview" src="https://img.shields.io/badge/Collabora%20Office-Development%20Preview-blue" title="Test the latest development snaphots of Collabora Office." loading="lazy"></img></a></p>
+<p><a href="https://matrix.to/#/#cool-dev:matrix.org"><img alt="Matrix" src="https://img.shields.io/badge/Matrix-%23cool--dev-turquoise.svg" loading="lazy"></img></a>
+<a href="https://t.me/CollaboraOnline"><img alt="Telegram" src="https://img.shields.io/badge/Telegram-Collabora%20Online-green.svg" loading="lazy"></img></a>
+<a href="https://forum.collaboraonline.com/"><img alt="Forum" src="https://img.shields.io/badge/Forum-Discourse-blue.svg" loading="lazy"></img></a>
+<a href="https://www.collaboraoffice.org/"><img alt="Website" src="https://img.shields.io/badge/Website-www.collaboraoffice.org-blueviolet.svg" loading="lazy"></img></a>
+<a href="https://hosted.weblate.org/projects/collabora-online/"><img alt="L10n" src="https://img.shields.io/badge/L10n-Weblate-lightgrey.svg" loading="lazy"></img></a></p>
+<p><strong>Secure Document Collaboration. Controlled by You.</strong></p>
+<p><img alt="" src="https://www.collaboraonline.com/wp-content/uploads/2024/02/Website_COOL_2305_Home-1024x366.png" loading="lazy"></img></p>
+<h2>Learn more 💡</h2>
+<ul>
+<li><a href="https://www.collaboraonline.com/code/">Collabora Online Development Edition (CODE)</a></li>
+<li><a href="https://www.collaboraonline.com/collabora-online/">Collabora Online</a></li>
+<li><a href="https://www.collaboraonline.com/collabora-office/">Collabora Office</a></li>
+<li><a href="https://www.collaboraonline.com/collabora-office-android-ios/">Collabora Office for iOS and Android</a></li>
+<li>For additional details, build instructions, downloads, and more, please visit <a href="https://www.collaboraoffice.org/">www.collaboraoffice.org</a>. You can also explore the <a href="https://sdk.collaboraonline.com/">SDK Documentation</a>.</li>
+</ul>
+<h2>Key features</h2>
+<ul>
+<li>View and edit text documents, spreadsheets, presentations &amp; more</li>
+<li>Collaborative editing features</li>
+<li>Collabora Online works in any modern browser – no plugin needed</li>
+<li><a href="https://www.collaboraonline.com/integrations/">Integrate, extend and customise</a></li>
+<li>Open Source – primarily under the <a href="http://mozilla.org/MPL/2.0/">MPLv2</a> license. Some parts are under other open source licences, see e.g. <a href="https://github.com/CollaboraOnline/online/blob/main/browser/LICENSE">browser/LICENSE</a>.</li>
+</ul>
+<h2>Get in touch 💬</h2>
+<ul>
+<li><a href="https://forum.collaboraonline.com/">📋 Forum</a></li>
+<li><a href="https://www.facebook.com/collaboraoffice/">👥 Facebook</a></li>
+<li><a href="https://www.instagram.com/collaboraoffice/">🅾 Instagram</a></li>
+<li><a href="https://twitter.com/CollaboraOffice">🐣 𝕏(Twitter)</a></li>
+<li><a href="https://bsky.app/profile/collaboraonline.com">🦋 Bluesky</a></li>
+<li><a href="https://mastodon.social/@CollaboraOffice">🐘 Mastodon</a></li>
+<li><a href="https://www.linkedin.com/products/collaboraproductivity-collabora-online/">💼 LinkedIn</a></li>
+<li><a href="https://www.youtube.com/@CollaboraOnline">🎥 YouTube</a></li>
+</ul>
+<h2>Integrating</h2>
+<p>To <a href="https://sdk.collaboraonline.com/docs/why_integrate.html">integrate</a> Collabora Online into your own solution, you can see our <a href="https://sdk.collaboraonline.com/docs/Step_by_step_tutorial.html">step-by-step tutorial</a>, view the <a href="https://sdk.collaboraonline.com/docs/available_integrations.html">available integrations</a>, understand the <a href="https://sdk.collaboraonline.com/docs/postmessage_api.html">post message API</a> used to customize and interact with Collabora Online, and a lot more.</p>
+<h3>Test running with integration for developers</h3>
+<p>Set up Nextcloud or ownCloud on localhost and install the richdocuments app, or explore other integrations that can be used to test Collabora Online at https://www.collaboraonline.com/integrations/.</p>
+<p>Good tutorials exist how to install ownCloud or Nextcloud, we don't repeat
+them here. richdocuments is called Collabora Online in the respective app
+stores / marketplaces / whatever.</p>
+<p>When you have a running Nextcloud or ownCloud instance at
+http://localhost/nextcloud or at http://localhost/owncloud
+go to Collabora Online settings, and set the WOPI URL to
+http://localhost:9980</p>
+<p>Then in the build tree, edit the generated coolwsd.xml and set ssl setting to
+false. You can run make run, and test coolwsd with the ownCloud or Nextcloud
+integration.</p>
+<p>Note: if SSL is enabled in either Online or the integration, both must
+have SSL enabled. That is, you must access NC/OC using https:// as well
+as configure the Collabora Online endpoint in NC/OC as https://localhost:9980.</p>
+<h2>Find a partner</h2>
+<p>Do you want a ready-to-go or simplified solution? Find a trusted vendor from our <a href="https://www.collaboraonline.com/partners/">list of global partners</a> who integrate and host Collabora Online.</p>
+<h2>Developer assistance</h2>
+<p>Please ask your questions on any of the bridged Matrix/Telegram rooms
+* Matrix: <a href="https://matrix.to/#/#cool-dev:matrix.org">#cool-dev:matrix.org</a>
+* Telegram: <a href="https://t.me/CollaboraOnline">CollaboraOnline</a></p>
+<p>Join the conversation on our Discourse server at https://forum.collaboraonline.com/</p>
+<p>Watch the tinderbox status (it should be green):</p>
+<p><a href="https://cpci.cbg.collabora.co.uk:8080/view/Tinderbox/job/Tinderbox%20for%20online%20main/"><img alt="tinderbox status" src="https://cpci.cbg.collabora.co.uk:8080/buildStatus/icon?job=Tinderbox+for+online+main&amp;subject=tinderbox" loading="lazy"></img></a></p>
+<h2>Development bits</h2>
+<p>This project has several components:
+* <strong>engine/</strong>
+  * The document rendering engine
+* <strong>wsd/</strong>
+  * The Web Services Daemon - which accepts external connections
+* <strong>kit/</strong>
+  * The client which lives in its own chroot and renders documents
+* <strong>common/</strong>
+  * Shared code between these processes
+* <strong>browser/</strong>
+  * The client side JavaScript component
+* <strong>test/</strong>
+  * C++ based unit tests
+* <strong>cypress_test/</strong>
+  * JavaScript based integration tests</p>
+<h2>Building for development</h2>
+<p>The engine (core) is built first, then online on top of it.</p>
+<pre><code>cd engine
+./autogen.sh --with-distro=CPLinux-LOKit-Dev
+make
+cd ..
+./autogen.sh --enable-developer
+make
+</code></pre>
+<p>Then "make run" to start coolwsd. Both developer options are convenience
+bundles; pass individual configure options to override a piece. To bootstrap
+from scratch, see scripts/clone-online.sh.</p>
+<p>See also README-gbuild.md for an ongoing merge of the two-step engine and online builds.</p>
+<h2>Software Bill of Materials</h2>
+<p>Collabora Online generates SBOMs for the server, the browser client, the
+engine and the container images. <a href="https://github.com/cocolian/online.mirror/blob/main/SBOM.md">SBOM.md</a> describes how they are
+generated, how to check them (<code>make sbom-check</code>, <code>make sbom-audit</code>,
+<code>make sbom-freshness</code>), how to scan them for known vulnerabilities, and what
+a clean scan does <em>not</em> tell you.</p>
+<h2>Further recommended reading with build details</h2>
+<ul>
+<li><strong><a href="https://www.collaboraoffice.org/post/build-code/">Build Collabora Online</a></strong></li>
+<li><strong><a href="https://www.collaboraoffice.org/post/build-code-ios/">Build Collabora Office for iOS</a></strong></li>
+<li><strong><a href="https://www.collaboraoffice.org/post/build-code-android/">Build Collabora Office for Android</a></strong></li>
+<li><strong><a href="https://www.collaboraoffice.org/post/build-co-windows/">Build Collabora Office for Windows</a></strong></li>
+<li><strong><a href="https://www.collaboraoffice.org/post/build-co-mac/">Build Collabora Office for macOS</a></strong></li>
+<li><strong><a href="https://www.collaboraoffice.org/post/build-co-linux/">Build Collabora Office for Linux</a></strong></li>
+</ul>
+<h2>Admin Panel</h2>
+<p>You can access the admin panel by directly accessing the admin.html file
+from browser directory.</p>
+<p>Websocket connections to admin console can be made at path: /adminws/ on the
+same url and port as coolwsd is running on. However, one needs a JWT token to
+authenticate to the admin console websocket. This is stored as a cookie with
+<code>Path: /adminws/</code> when user successfully authenticates when trying to access
+/browser/dist/admin/admin*html files (HTTP Basic authentication). Token
+is expired after every half an hour, so websocket connection to admin console
+must be established within this period.</p>
+<p>It should also be possible to do various sorts of tasks such as killing
+documents that are open for more than 10 hours etc. See protocol.txt for
+various commands. Only tricky thing here is getting the JWT token which can
+be obtained as described above.</p>
+<h2>Protocol description</h2>
+<p>See <strong><a href="https://github.com/cocolian/online.mirror/blob/main/wsd/protocol.txt">protocol.txt</a></strong> for a description of the protocol to be used over the
+websocket.</p>
+<h2>Architecture</h2>
+<p>Please refer to https://sdk.collaboraonline.com/docs/architecture.html</p>
+<h2>Enjoy!</h2></article><section id="trial" class="trial"><h2>关注「老熊看架构」，获取在线试用密码</h2><p>使用微信扫描下方二维码，关注「老熊看架构」公众号后获取试用密码，再通过试用登录入口体验在线编辑和文档转换。</p><img class="qrcode" src="/community-qrcode.jpg" width="258" height="258" alt="老熊看架构微信公众号二维码"><p><a class="button" href="/login">进入试用登录</a></p><p class="note">项目源码可按各组件许可证免费使用、部署和接入。</p></section></main><footer>基于 LibreOffice 与 Collabora Online · <a href="https://github.com/cocolian/online.mirror">查看项目 README 与许可证</a></footer></body></html>

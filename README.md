@@ -28,3 +28,14 @@ Cocolian Office 的目标是构建国产化的 LibreOffice 和云文档中台，
 欢迎接入本项目，欢迎贡献代码、测试和文档。欢迎捐款支持，可通过 GitHub Issue 联系项目维护者。
 
 相关源码保留原有许可证和版权声明，使用、修改和分发时请遵守各组件许可。
+
+## 项目首页
+
+门户首页使用公开渲染仓库 README 的本地快照，源文件为 `apps/office-portal/project-readme.md`。更新快照后重新生成静态页面：
+
+```bash
+python3 -m pip install -r apps/office-portal/requirements-homepage.txt
+python3 apps/office-portal/build-homepage.py
+```
+
+首页末尾展示公众号二维码与在线试用入口。试用登录后进入 `/workspace` 文档工作台。访问密钥通过运行环境注入，不写入页面、源码或提交记录。

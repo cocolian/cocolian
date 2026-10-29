@@ -9,7 +9,7 @@ from pathlib import Path
 EDITOR = json.loads(Path(__file__).with_name('editor.json').read_text())
 if EDITOR['language'] not in ('zh-CN', 'zh-TW', 'en-US') or EDITOR['ui_mode'] not in ('compact', 'tabbed'):
     raise ValueError('Unsupported editor configuration')
-DATA = Path('/data'); DATA.mkdir(exist_ok=True)
+DATA = Path(os.environ.get('OFFICE_DATA_DIR', '/data')); DATA.mkdir(parents=True, exist_ok=True)
 KEY = os.environ['LAB_KEY'].strip()
 TOKENS = {hashlib.sha256((KEY+u).encode()).hexdigest(): u for u in ('Alice','Bob')}
 LOCK = threading.RLock()
@@ -34,7 +34,7 @@ class Handler(BaseHTTPRequestHandler):
         return any(hmac.compare_digest(value.encode(),KEY.encode()) for value in values)
     def cookie_headers(self):
         secure='; Secure' if self.headers.get('Host','').split(':')[0]=='office.cocolian.cn' or self.headers.get('X-Forwarded-Proto')=='https' else ''
-        return {'Set-Cookie':'office_session='+KEY+'; Path=/; HttpOnly; SameSite=Lax; Max-Age=14400'+secure,'Location':'/'}
+        return {'Set-Cookie':'office_session='+KEY+'; Path=/; HttpOnly; SameSite=Lax; Max-Age=14400'+secure,'Location':'/workspace'}
     def login_page(self, error=''):
         return '''<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Office 文档工作台</title><style>*{box-sizing:border-box}body{font:15px system-ui!important;background:#f4f6fb;color:#19243b;max-width:1000px!important;margin:48px auto!important;padding:32px!important}h1{font-size:32px;letter-spacing:-1px;margin-bottom:8px}h2{font-size:20px;margin-top:32px}p{color:#637089;line-height:1.7}a{color:#3659d9;text-decoration:none}a[href^="/edit"]{display:inline-block;background:#3659d9;color:white;padding:12px 22px;border-radius:10px;margin:6px 8px 6px 0;box-shadow:0 4px 12px #3659d922}form{background:white;padding:24px;border:1px solid #e1e6f0;border-radius:16px;box-shadow:0 8px 28px #19243b08}input{font:inherit;max-width:100%;border:1px solid #ccd4e3;border-radius:8px;padding:12px!important}button{font:inherit;background:#3659d9;color:white;border:0;border-radius:8px;padding:12px 18px!important;cursor:pointer;margin:8px}a:hover,button:hover{filter:brightness(.94)}body:before{content:"COCOLIAN / OFFICE";font-size:12px;letter-spacing:2px;color:#74819b}input[type=file]{display:block;width:100%;background:#f8faff;border:1px dashed #aab9da;padding:24px!important;margin-bottom:16px}footer{margin-top:40px;font-size:12px;color:#8792a6;border-top:1px solid #dfe5f0;padding-top:20px}@media(max-width:600px){body{margin:12px auto!important;padding:20px!important}h1{font-size:26px}a[href^="/edit"]{display:block;text-align:center}button{margin-left:0}}</style></head><body style="font:16px system-ui;max-width:720px;margin:60px auto;padding:24px"><h1>文档工作台</h1><p>请输入访问密钥，使用在线编辑和文档转换。</p><p>'''+html.escape(error)+'''</p><form action="/login" method="post"><input type="password" name="key" required autocomplete="current-password" aria-label="访问密钥" style="width:320px;padding:10px"><button type="submit" style="padding:10px">登录</button></form><footer>Office Lab · Collabora Online / LibreOffice</footer></body></html>'''
     def log_message(self, fmt, *args):
@@ -62,6 +62,12 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         p=urllib.parse.urlsplit(self.path); q=urllib.parse.parse_qs(p.query)
         if p.path=='/health': return self.reply(200,{'status':'ok'})
+        if p.path in ('/project-homepage.css', '/community-qrcode.jpg'):
+            return self.reply_file(Path(__file__).with_name(p.path[1:]))
+        if p.path=='/login':
+            return self.reply(200,self.login_page(),'text/html; charset=utf-8')
+        if p.path=='/' and not (self.authenticated(q) and q.get('key')):
+            return self.reply(200,Path(__file__).with_name('project-homepage.html').read_bytes(),'text/html; charset=utf-8',headers={'Content-Security-Policy':"default-src 'none'; img-src 'self' https:; style-src 'self'; base-uri 'none'; form-action 'self'"})
         if p.path=='/auth':
             return self.reply(204 if self.authenticated() else 401,b'',headers={'WWW-Authenticate':'Bearer realm="office-lab"'})
         match=re.fullmatch(r'/wopi/files/([a-z0-9]+)(/contents)?', p.path)
@@ -77,7 +83,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(303,b'',headers=self.cookie_headers())
         if not self.authenticated(q):
             if p.path=='/': return self.reply(200,self.login_page(),'text/html; charset=utf-8')
-            return self.reply(303,b'',headers={'Location':'/'})
+            return self.reply(303,b'',headers={'Location':'/workspace'})
         if p.path in ('/file-open.js','/file-open.css','/file-open.svg'):
             asset=Path(__file__).with_name(p.path[1:])
             return self.reply(200,asset.read_bytes(),mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
@@ -87,7 +93,7 @@ class Handler(BaseHTTPRequestHandler):
             try: document=file_open.resolve(DATA,q.get('file',['1'])[0])
             except FileNotFoundError: return self.reply(404)
             return self.reply_file(document,attachment=True)
-        if p.path=='/':
+        if p.path=='/workspace':
             links=' '.join('<a target="_blank" rel="noopener" href="/edit?user='+u+'">'+u+' 在线编辑</a>' for u in ('Alice','Bob'))
             return self.reply(200,'<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Office 文档工作台</title><style>*{box-sizing:border-box}body{font:15px system-ui!important;background:#f4f6fb;color:#19243b;max-width:1000px!important;margin:48px auto!important;padding:32px!important}h1{font-size:32px;letter-spacing:-1px;margin-bottom:8px}h2{font-size:20px;margin-top:32px}p{color:#637089;line-height:1.7}a{color:#3659d9;text-decoration:none}a[href^="/edit"]{display:inline-block;background:#3659d9;color:white;padding:12px 22px;border-radius:10px;margin:6px 8px 6px 0;box-shadow:0 4px 12px #3659d922}form{background:white;padding:24px;border:1px solid #e1e6f0;border-radius:16px;box-shadow:0 8px 28px #19243b08}input{font:inherit;max-width:100%;border:1px solid #ccd4e3;border-radius:8px;padding:12px!important}button{font:inherit;background:#3659d9;color:white;border:0;border-radius:8px;padding:12px 18px!important;cursor:pointer;margin:8px}a:hover,button:hover{filter:brightness(.94)}body:before{content:"COCOLIAN / OFFICE";font-size:12px;letter-spacing:2px;color:#74819b}input[type=file]{display:block;width:100%;background:#f8faff;border:1px dashed #aab9da;padding:24px!important;margin-bottom:16px}footer{margin-top:40px;font-size:12px;color:#8792a6;border-top:1px solid #dfe5f0;padding-top:20px}@media(max-width:600px){body{margin:12px auto!important;padding:20px!important}h1{font-size:26px}a[href^="/edit"]{display:block;text-align:center}button{margin-left:0}}</style></head><body style="font:16px system-ui;max-width:720px;margin:60px auto;padding:24px"><h1>文档工作台</h1><p>在线协同与格式转换，一站完成。</p><h2>在线编辑</h2><p>'+links+'</p><p>选择一个测试身份进入编辑器。Alice 与 Bob 共同编辑同一份文档，修改自动保存。</p><p><a href="/download">下载保存后的 DOCX</a></p><h2>DOCX 转 PDF</h2><p>上传 Word 文档，转换完成后下载 PDF。单个请求最大 200 MB。</p><form action="/convert/forms/libreoffice/convert" method="post" enctype="multipart/form-data" target="_blank"><input type="file" name="files" accept=".docx" required><button type="submit">转换并下载 PDF</button></form><footer>Office Lab · Collabora Online / LibreOffice</footer></body></html>','text/html; charset=utf-8')
         if p.path=='/edit':
@@ -112,7 +118,7 @@ class Handler(BaseHTTPRequestHandler):
             length=int(self.headers.get('Content-Length','0'))
             if length>4096:return self.reply(413)
             values=urllib.parse.parse_qs(self.rfile.read(length).decode(errors='replace'))
-            if self.authenticated(values):return self.reply(303,b'',headers=self.cookie_headers())
+            if hmac.compare_digest(values.get('key',[''])[0].encode(),KEY.encode()):return self.reply(303,b'',headers=self.cookie_headers())
             return self.reply(401,self.login_page('访问密钥无效，请重试。'),'text/html; charset=utf-8')
         if p.path=='/api/files':
             if not self.authenticated(): return self.reply(401,{'error':'请先登录'})
@@ -168,4 +174,5 @@ class Handler(BaseHTTPRequestHandler):
                 locks.pop(file_id,None); return self.reply(200)
             return self.reply(501)
 
-ThreadingHTTPServer(('0.0.0.0',8000),Handler).serve_forever()
+if __name__ == '__main__':
+    ThreadingHTTPServer(('0.0.0.0',8000),Handler).serve_forever()
