@@ -57,7 +57,9 @@ class HomepageTests(unittest.TestCase):
         with self.request('/auth', headers={'Cookie':'office_session='+invalid}) as response: self.assertEqual(response.status, 401)
         with self.request('/login', urllib.parse.urlencode({'key':invalid}).encode(), {'Cookie':'office_session='+server.KEY}) as response:
             self.assertEqual(response.status, 401)
-        with self.request('/workspace') as response: self.assertEqual(response.status, 303)
+        with self.request('/workspace') as response:
+            self.assertEqual(response.status, 303)
+            self.assertEqual(response.headers['Location'], '/login')
     def test_login_form_has_no_credential(self):
         with self.request('/login') as response:
             body = response.read().decode()

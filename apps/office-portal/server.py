@@ -83,7 +83,7 @@ class Handler(BaseHTTPRequestHandler):
             return self.reply(303,b'',headers=self.cookie_headers())
         if not self.authenticated(q):
             if p.path=='/': return self.reply(200,self.login_page(),'text/html; charset=utf-8')
-            return self.reply(303,b'',headers={'Location':'/workspace'})
+            return self.reply(303,b'',headers={'Location':'/login'})
         if p.path in ('/file-open.js','/file-open.css','/file-open.svg'):
             asset=Path(__file__).with_name(p.path[1:])
             return self.reply(200,asset.read_bytes(),mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
