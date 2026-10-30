@@ -37,6 +37,7 @@ with sync_playwright() as p:
  page.locator('.ai-reopen').click()
  if '--real-model' not in sys.argv:
   page.route('**/api/ai/chat',lambda route:route.fulfill(json={'suggestion':'可以帮你完善文档。'}))
+ page.locator('.ai-mode').select_option('chat')
  page.locator('.ai-instruction').fill('你能帮我做什么？')
  page.locator('.ai-send').click();expect(page.locator('.ai-send')).to_be_enabled(timeout=70000)
  assert page.locator('.ai-assistant').count()==1
