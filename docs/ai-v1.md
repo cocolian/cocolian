@@ -17,3 +17,9 @@
 ## 验证
 
 运行 `python3 -m unittest discover -s apps/office-portal -p 'test_*.py'`。浏览器验证脚本使用独立上传的合成文档，不改写用户已有文档；模型结果采用明确的测试替身，模型真实调用须另行配置验收。下载 DOCX 核对 `w:ins`、`w:del` 与修改正文。部署遵循现有 main 自动构建发布流程，保留 Secret、PVC 和其他三个渲染服务。
+
+## MiniMax M3
+
+选择 `AI_BASE_URL=https://api.minimax.io/v1` 与 `AI_MODEL=MiniMax-M3`，`AI_API_KEY` 引用服务器 Secret。代理为该模型启用 `reasoning_split=true`，只使用正文 `content`，不返回或写入 `reasoning_content`；使用 `max_completion_tokens=8192`，截断输出仍拒绝应用。
+
+官方接口参考：https://platform.minimax.io/docs/api-reference/text-openai-api 。模型权限与计费由所用 MiniMax API Key 决定，配置完成后必须使用合成文本做真实请求验收。
