@@ -1,5 +1,5 @@
 """Real HTTPS editor validation using disposable documents and a mocked model response."""
-import subprocess,base64,json,io,zipfile,time,urllib.parse
+import subprocess,base64,json,io,zipfile,time,urllib.parse,sys
 from pathlib import Path
 from playwright.sync_api import sync_playwright
 root=Path(__file__).resolve().parents[1]
@@ -21,8 +21,11 @@ with sync_playwright() as p:
  page.wait_for_timeout(10000)
  frame=page.frame(name='editor')
  print(frame.evaluate('''()=>({url:location.pathname,app:!!window.app,map:!!window.app?.map,doc:window.app?.map?._docLayer?._docType,layout:window.app?.activeDocument?.activeLayout?.type,selection:typeof window.app?.map?._docLayer?._onTextSelectionMsg})'''))
- for f in ('ai-editor.js','ai-panel.js'):page.add_script_tag(path=str(root/'apps/office-portal'/f))
- page.add_style_tag(path=str(root/'apps/office-portal/ai-panel.css'))
+ if '--local-assets' in sys.argv:
+  for f in ('ai-editor.js','ai-panel.js'):page.add_script_tag(path=str(root/'apps/office-portal'/f))
+  page.add_style_tag(path=str(root/'apps/office-portal/ai-panel.css'))
+ else:
+  page.locator('#office-ai').wait_for()
  page.wait_for_timeout(1500)
  print(frame.evaluate('''()=>{const l=app.activeDocument.activeLayout;return {layout:l.type,size:l.viewSize.pY,padding:l.officeAILastSize,keys:Object.keys(app.map._docLayer).filter(k=>/select/i.test(k))}}'''))
  
