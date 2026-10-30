@@ -28,6 +28,12 @@ class HomepageTests(unittest.TestCase):
     @classmethod
     def tearDownClass(cls):
         cls.http.shutdown(); cls.http.server_close(); cls.worker.join(); _tmp.cleanup()
+    def test_ai_requires_authentication(self):
+        import urllib.error
+        req=urllib.request.Request(self.base+'/api/ai/edit',data=b'{}',headers={'Content-Type':'application/json'})
+        with self.assertRaises(urllib.error.HTTPError) as error: urllib.request.urlopen(req)
+        self.assertEqual(error.exception.code,401)
+
     def request(self, path, data=None, headers=None):
         req = urllib.request.Request(self.base+path, data=data, headers=headers or {})
         try: return urllib.request.build_opener(NoRedirect()).open(req)

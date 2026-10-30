@@ -1,4 +1,5 @@
 import re, uuid, mimetypes, shutil
+import ai_proxy
 import file_open
 import render_profile
 import os, json, hashlib, threading, time, urllib.parse, urllib.request, html, zipfile, io, hmac
@@ -84,7 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.authenticated(q):
             if p.path=='/': return self.reply(200,self.login_page(),'text/html; charset=utf-8')
             return self.reply(303,b'',headers={'Location':'/login'})
-        if p.path in ('/file-open.js','/file-open.css','/file-open.svg'):
+        if p.path in ('/file-open.js','/file-open.css','/file-open.svg','/ai-panel.js','/ai-panel.css','/ai-editor.js'):
             asset=Path(__file__).with_name(p.path[1:])
             return self.reply(200,asset.read_bytes(),mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
         if p.path=='/api/files':
@@ -109,7 +110,7 @@ class Handler(BaseHTTPRequestHandler):
             if action is None: return self.reply(400,{'error':'编辑器暂不支持此格式'})
             url=urllib.parse.urlsplit(action.get('urlsrc'))
             src=url.path+'?WOPISrc='+urllib.parse.quote('http://wopi:8080/wopi/files/'+file_id,safe='')+'&lang='+urllib.parse.quote(EDITOR['language'],safe='')
-            page='<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}body{position:fixed;inset:0}#f{display:none}iframe[name=editor]{position:fixed;inset:0;display:block;border:0;width:100%;height:100%}</style><link rel="stylesheet" href="/file-open.css"><title>'+html.escape(document.name)+' · '+user+' Office Lab</title></head><body><form id="f" action="'+html.escape(src)+'" method="post" target="editor"><input type="hidden" name="access_token" value="'+token+'"><input type="hidden" name="access_token_ttl" value="0"><input type="hidden" name="ui_defaults" value="UIMode='+html.escape(EDITOR['ui_mode'])+';SavedUIState='+str(EDITOR['use_saved_ui_state']).lower()+';"></form><iframe title="Collabora '+user+'" name="editor" allow="clipboard-read; clipboard-write"></iframe><script>document.getElementById("f").submit()</script><script src="/file-open.js"></script></body></html>'
+            page='<!doctype html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>html,body{margin:0;width:100%;height:100%;overflow:hidden;overscroll-behavior:none}body{position:fixed;inset:0}#f{display:none}iframe[name=editor]{position:fixed;inset:0;display:block;border:0;width:100%;height:100%}</style><link rel="stylesheet" href="/file-open.css"><title>'+html.escape(document.name)+' · '+user+' Office Lab</title></head><body><form id="f" action="'+html.escape(src)+'" method="post" target="editor"><input type="hidden" name="access_token" value="'+token+'"><input type="hidden" name="access_token_ttl" value="0"><input type="hidden" name="ui_defaults" value="UIMode='+html.escape(EDITOR['ui_mode'])+';SavedUIState='+str(EDITOR['use_saved_ui_state']).lower()+';"></form><iframe title="Collabora '+user+'" name="editor" allow="clipboard-read; clipboard-write"></iframe><script>document.getElementById("f").submit()</script><script src="/file-open.js"></script><link rel="stylesheet" href="/ai-panel.css"><script src="/ai-editor.js"></script><script src="/ai-panel.js"></script></body></html>'
             return self.reply(200,page,'text/html')
         return self.reply(404)
     def do_POST(self):
@@ -120,6 +121,26 @@ class Handler(BaseHTTPRequestHandler):
             values=urllib.parse.parse_qs(self.rfile.read(length).decode(errors='replace'))
             if hmac.compare_digest(values.get('key',[''])[0].encode(),KEY.encode()):return self.reply(303,b'',headers=self.cookie_headers())
             return self.reply(401,self.login_page('访问密钥无效，请重试。'),'text/html; charset=utf-8')
+        if p.path=='/api/ai/edit':
+            if not self.authenticated(): return self.reply(401,{'error':'请先登录'})
+            if self.headers.get('Sec-Fetch-Site')=='cross-site': return self.reply(403)
+            origin=self.headers.get('Origin')
+            if origin and urllib.parse.urlsplit(origin).netloc!=self.headers.get('Host'): return self.reply(403)
+            if self.headers.get('Content-Type','').split(';')[0]!='application/json': return self.reply(415)
+            try:
+                length=int(self.headers.get('Content-Length','0'))
+                if not 0 < length <= 100000: return self.reply(413)
+                self.connection.settimeout(70)
+                payload=json.loads(self.rfile.read(length))
+                if not isinstance(payload,dict): raise ValueError('请求必须为对象')
+                file_id=payload.get('file','1')
+                if not isinstance(file_id,str): raise ValueError('文件标识无效')
+                file_open.resolve(DATA,file_id)
+                result=ai_proxy.suggest(payload)
+            except FileNotFoundError: return self.reply(404)
+            except (ValueError,TypeError): return self.reply(400,{'error':'请求内容无效'})
+            except ai_proxy.AIError as error: return self.reply(503,{'error':str(error)})
+            return self.reply(200,result)
         if p.path=='/api/files':
             if not self.authenticated(): return self.reply(401,{'error':'请先登录'})
             if self.headers.get('Sec-Fetch-Site')=='cross-site': return self.reply(403)
