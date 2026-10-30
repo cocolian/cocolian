@@ -23,6 +23,20 @@ with sync_playwright() as p:
  page.goto('https://office.cocolian.cn/edit?user=Alice&file='+file_id)
  frame=page.frame(name='editor');page.wait_for_timeout(10000)
  if frame.get_by_text('跳过',exact=True).count():frame.get_by_text('跳过',exact=True).click()
+ assert page.locator('iframe[name=editor]').evaluate('(el)=>el.getBoundingClientRect().width')==1440
+ expect(page.locator('#office-ai')).to_have_css('width','560px')
+ expected_center=frame.evaluate("()=>{const a=app.activeDocument.activeLayout.getDocumentAnchorSection(),r=app.sectionContainer.getCanvasBoundingClientRect();return r.left+(a.myTopLeft[0]+a.size[0]/2)/app.dpiScale;}")
+ panel_center=page.locator('#office-ai').evaluate('(el)=>{const r=el.getBoundingClientRect();return r.left+r.width/2;}')
+ assert abs(panel_center-expected_center)<2,(panel_center,expected_center)
+ assert page.locator('.ai-history').count()==0
+ page.locator('.ai-instruction').fill('保留原有格式')
+ page.locator('.ai-collapse').click();assert page.locator('.ai-shell').is_hidden()
+ page.locator('.ai-mini').click();assert page.locator('.ai-instruction').input_value()=='保留原有格式'
+ page.locator('.ai-instruction').fill('')
+ page.set_viewport_size({'width':390,'height':700});page.wait_for_timeout(600)
+ box=page.locator('#office-ai').bounding_box();assert box['x']>=0 and box['x']+box['width']<=390
+ page.set_viewport_size({'width':1440,'height':1000});page.wait_for_timeout(600)
+ page.screenshot(path=str(out/'floating-composer.png'))
  page.evaluate("window.testAI=new OfficeAIEditor(document.querySelector('iframe[name=editor]'))")
  for text,note in [('The project launch date is Monday.','把本段 Monday 改为 Tuesday，保留其他文字。'),('The budget is 100 yuan.','把本段预算数字 100 改为 200，保留其他文字。')]:
   page.evaluate('(text)=>window.testAI.locate(text)',text)
@@ -38,6 +52,8 @@ with sync_playwright() as p:
    assert sum(len(b['text']) for b in payload['blocks'])<=12000
    assert payload['context'] and len(payload['context'])<=6000
    seen.update(b['id'] for b in payload['blocks']);calls.append(len(payload['blocks']))
+   page.locator('.ai-collapse').click();assert page.locator('.ai-mini').is_visible()
+   page.locator('.ai-mini').click()
    if '--changed-document' in sys.argv:
     frame.evaluate("app.map.sendUnoCommand('.uno:InsertAnnotation',{Text:{type:'string',value:'新增批注：需要重新生成'}})")
     page.wait_for_timeout(600)
@@ -47,10 +63,9 @@ with sync_playwright() as p:
     candidate_edits[1].update(before='100',after='Monday')
    route.fulfill(json={'summary':'按两条批注修改日期和预算','warnings':[],'edits':[e for e in candidate_edits if e['block_id'] in {b['id'] for b in payload['blocks']}]})
   page.route('**/api/ai/revise',model)
- assert page.locator('.ai-mode').input_value()=='document'
  page.locator('.ai-revise').click()
  expect(page.locator('.ai-send')).to_be_enabled(timeout=180000)
- result=page.locator('.ai-assistant .ai-message-text').last.inner_text();print(result)
+ result=page.locator('.ai-status').inner_text();print(result)
  if '--ambiguous-after' in sys.argv:
   assert '已确认写入 1 处' in result and '不唯一' in result
   print('PASS: a preceding edit cannot create an ambiguous target for the next write');browser.close();sys.exit(0)
