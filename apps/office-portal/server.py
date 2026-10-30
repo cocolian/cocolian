@@ -85,7 +85,7 @@ class Handler(BaseHTTPRequestHandler):
         if not self.authenticated(q):
             if p.path=='/': return self.reply(200,self.login_page(),'text/html; charset=utf-8')
             return self.reply(303,b'',headers={'Location':'/login'})
-        if p.path in ('/file-open.js','/file-open.css','/file-open.svg','/ai-panel.js','/ai-panel.css','/ai-editor.js'):
+        if p.path in ('/file-open.js','/file-open.css','/file-open.svg','/ai-panel.js','/ai-panel.css','/ai-session.css','/ai-editor.js'):
             asset=Path(__file__).with_name(p.path[1:])
             return self.reply(200,asset.read_bytes(),mimetypes.guess_type(asset.name)[0] or 'application/octet-stream')
         if p.path=='/api/files':

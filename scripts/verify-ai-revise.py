@@ -18,7 +18,7 @@ with sync_playwright() as p:
  assert upload.status==201
  file_id=upload.json()['id'];page=context.new_page()
  if '--local-assets' in sys.argv:
-  for asset in ('ai-editor.js','ai-panel.js','ai-panel.css'):
+  for asset in ('ai-editor.js','ai-panel.js','ai-panel.css','ai-session.css'):
    page.route('**/'+asset,lambda route,request,asset=asset:route.fulfill(path=str(root/'apps/office-portal'/asset)))
  page.goto('https://office.cocolian.cn/edit?user=Alice&file='+file_id)
  frame=page.frame(name='editor');page.wait_for_timeout(10000)
@@ -29,6 +29,24 @@ with sync_playwright() as p:
  panel_center=page.locator('#office-ai').evaluate('(el)=>{const r=el.getBoundingClientRect();return r.left+r.width/2;}')
  assert abs(panel_center-expected_center)<2,(panel_center,expected_center)
  assert page.locator('.ai-history').count()==0
+ assert page.locator('#office-ai .ai-stages').count()==0
+ expect(frame.locator('#tab-office-session')).to_be_visible()
+ assert frame.locator('#navigation-options [role=tab]').count()==3
+ frame.locator('#tab-navigator').click();page.wait_for_timeout(500)
+ assert frame.locator('#office-session-panel').is_hidden()
+ assert frame.locator('#tab-navigator').get_attribute('aria-selected')=='true'
+ frame.locator('#tab-quick-find').click()
+ expect(frame.locator('#navigator-search-input')).to_be_visible()
+ page.wait_for_timeout(800)
+ frame.locator('#navigator-search-input').press_sequentially('budget',delay=60)
+ frame.locator('.navigation-search-wrapper').get_by_role('button',name='搜索',exact=True).click()
+ page.wait_for_timeout(800)
+ expect(frame.locator('#quickfind-dock-wrapper .ui-treeview-entry').first).to_be_visible()
+ frame.locator('#tab-office-session').click();assert frame.locator('#office-session-panel').is_visible()
+ frame.locator('#tab-navigator').focus();frame.locator('#tab-navigator').press('ArrowRight')
+ assert frame.locator('#tab-quick-find').get_attribute('aria-selected')=='true'
+ frame.locator('#tab-quick-find').press('ArrowRight')
+ assert frame.locator('#tab-office-session').get_attribute('aria-selected')=='true'
  page.locator('.ai-instruction').fill('保留原有格式')
  page.locator('.ai-collapse').click();assert page.locator('.ai-shell').is_hidden()
  page.locator('.ai-mini').click();assert page.locator('.ai-instruction').input_value()=='保留原有格式'
@@ -54,10 +72,13 @@ with sync_playwright() as p:
    seen.update(b['id'] for b in payload['blocks']);calls.append(len(payload['blocks']))
    page.locator('.ai-collapse').click();assert page.locator('.ai-mini').is_visible()
    page.locator('.ai-mini').click()
+   frame.locator('#tab-navigator').click();frame.locator('#tab-office-session').click()
+   assert frame.locator('#office-session-panel .ai-status').last.inner_text()
    if '--changed-document' in sys.argv:
     frame.evaluate("app.map.sendUnoCommand('.uno:InsertAnnotation',{Text:{type:'string',value:'新增批注：需要重新生成'}})")
     page.wait_for_timeout(600)
    candidate_edits=[{'block_id':'b1','before':'The project launch date is Monday.','after':'The project launch date is Tuesday.','comment_ids':[payload['comments'][0]['id']]},{'block_id':'b2','before':'The budget is 100 yuan.','after':'The budget is 200 yuan.','comment_ids':[payload['comments'][1]['id']]}]
+   if '--history' in sys.argv and len(calls)>1:candidate_edits=[]
    if '--ambiguous-after' in sys.argv:
     candidate_edits[0].update(before='Monday',after='Tuesday')
     candidate_edits[1].update(before='100',after='Monday')
@@ -65,7 +86,7 @@ with sync_playwright() as p:
   page.route('**/api/ai/revise',model)
  page.locator('.ai-revise').click()
  expect(page.locator('.ai-send')).to_be_enabled(timeout=180000)
- result=page.locator('.ai-status').inner_text();print(result)
+ result=frame.locator('#office-session-panel .ai-status').last.inner_text();print(result)
  if '--ambiguous-after' in sys.argv:
   assert '已确认写入 1 处' in result and '不唯一' in result
   print('PASS: a preceding edit cannot create an ambiguous target for the next write');browser.close();sys.exit(0)
@@ -89,6 +110,17 @@ with sync_playwright() as p:
  assert len(tree.findall('.//w:del',ns))>=2
  assert tree.find('.//w:p/w:r/w:rPr/w:b',ns) is not None
  assert 'Unchanged final paragraph.' in xml
+ frame.locator('#office-session-panel .ai-details').last.locator('summary').click()
+ assert frame.locator('#office-session-panel .ai-report').last.inner_text()
+ assert page.locator('#office-ai .ai-status').count()==0
  page.screenshot(path=str(out/'comment-workflow.png'))
+ if '--history' in sys.argv:
+  first=frame.locator('#office-session-panel .ai-status').first.inner_text()
+  page.locator('.ai-revise').click();expect(page.locator('.ai-send')).to_be_enabled(timeout=180000)
+  assert frame.locator('#office-session-panel .office-session-record').count()==2
+  assert frame.locator('#office-session-panel .ai-status').first.inner_text()==first
+  frame.locator('#tab-navigator').click();frame.locator('#tab-office-session').click()
+  assert frame.locator('#office-session-panel .office-session-record').count()==2
+  print('PASS: native outline/search/session tabs, keyboard navigation, and retained execution history')
  print('PASS: automatic source+comments prompt, two revisions, original formatting, comments and untouched text retained')
  browser.close()
