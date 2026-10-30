@@ -34,7 +34,8 @@ with sync_playwright() as p:
  page.wait_for_timeout(1000)
  page.locator('.ai-capture').click();page.wait_for_timeout(1000)
  assert 'OpenWen AI original sentence.' in page.locator('.ai-source').input_value()
- page.route('**/api/ai/edit',lambda route:route.fulfill(json={'suggestion':'OpenWen AI revised sentence.'}))
+ if '--real-model' not in sys.argv:
+  page.route('**/api/ai/edit',lambda route:route.fulfill(json={'suggestion':'OpenWen AI revised sentence.'}))
  frame.evaluate("app.map.sendUnoCommand('.uno:InsertAnnotation',{Text:{type:'string',value:'Improve wording'}})")
  page.wait_for_timeout(1000)
  page.locator('.ai-comments').click()
@@ -47,8 +48,9 @@ with sync_playwright() as p:
  frame.evaluate("app.activeDocument.activeLayout.scroll(0,100000,true)")
  page.wait_for_timeout(500)
  assert frame.evaluate("app.activeDocument.activeLayout.scrollProperties.viewY")>0
- page.locator('.ai-instruction').fill('Improve wording')
- page.locator('.ai-send').click();page.wait_for_timeout(500)
+ page.locator('.ai-instruction').fill('将原文替换为这句英文，仅返回这一句，不添加其他内容：OpenWen AI revised sentence.')
+ page.locator('.ai-send').click();page.locator('.ai-accept').wait_for(state='visible',timeout=70000)
+ assert '<think>' not in page.locator('.ai-result').inner_text()
  frame.evaluate("app.map.focus()")
  page.keyboard.press("ArrowRight")
  page.wait_for_timeout(500)
@@ -57,7 +59,8 @@ with sync_playwright() as p:
  frame.evaluate("app.map.sendUnoCommand('.uno:SelectAll')")
  page.wait_for_timeout(700)
  page.locator('.ai-capture').click();page.wait_for_timeout(700)
- page.locator('.ai-send').click();page.wait_for_timeout(500)
+ page.locator('.ai-send').click();page.locator('.ai-accept').wait_for(state='visible',timeout=70000)
+ assert '<think>' not in page.locator('.ai-result').inner_text()
  page.locator('header button[aria-label="收缩 AI 窗口"]').click()
  assert page.locator('#office-ai').evaluate('(el)=>el.getBoundingClientRect().height')==48
  page.locator('header button[aria-label="展开 AI 窗口"]').click()

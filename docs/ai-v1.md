@@ -23,3 +23,9 @@
 选择 `AI_BASE_URL=https://api.minimax.io/v1` 与 `AI_MODEL=MiniMax-M3`，`AI_API_KEY` 引用服务器 Secret。代理为该模型启用 `reasoning_split=true`，只使用正文 `content`，不返回或写入 `reasoning_content`；使用 `max_completion_tokens=8192`，截断输出仍拒绝应用。
 
 官方接口参考：https://platform.minimax.io/docs/api-reference/text-openai-api 。模型权限与计费由所用 MiniMax API Key 决定，配置完成后必须使用合成文本做真实请求验收。
+
+服务器部署补丁：`deploy/k8s/wopi-ai-minimax.patch.json`。先在 office-lab 创建 `office-ai-minimax` Secret，字段为 `AI_API_KEY`，再应用补丁。补丁只包含引用，不包含密钥。
+
+`python scripts/verify-ai-editor.py --real-model` 使用真实模型测试独立合成文档；默认仍使用模型测试替身。真实模式会产生少量模型调用费用。
+
+当前部署使用中国区 `https://api.minimaxi.com/v1`，对应用户提供的中国区 API Key。国际区与中国区须使用各自匹配的凭据。`deploy/k8s/wopi-ai-egress.json` 仅向门户放行官方域名在部署时解析出的 IP 的 TCP 443；不移除现有隔离。MiniMax DNS 地址变动后需重新核对并更新 IP 白名单。

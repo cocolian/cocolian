@@ -1,0 +1,1 @@
+{"spec":{"template":{"spec":{"containers":[{"name":"wopi","env":[{"name":"AI_BASE_URL","value":"https://api.minimaxi.com/v1"},{"name":"AI_MODEL","value":"MiniMax-M3"},{"name":"AI_API_KEY","valueFrom":{"secretKeyRef":{"name":"office-ai-minimax","key":"AI_API_KEY"}}}]}]}}}}
