@@ -34,6 +34,19 @@ class HomepageTests(unittest.TestCase):
         with self.assertRaises(urllib.error.HTTPError) as error: urllib.request.urlopen(req)
         self.assertEqual(error.exception.code,401)
 
+    def test_review_api_auth_and_cross_origin(self):
+        import json
+        data=json.dumps({'op':'sync','file':'1','client':'test','comments':[],'revisions':[]}).encode()
+        def send(headers):
+            return urllib.request.urlopen(urllib.request.Request(self.base+'/api/ai/review',data=data,headers={'Content-Type':'application/json',**headers}))
+        with self.assertRaises(urllib.error.HTTPError) as error:send({})
+        self.assertEqual(error.exception.code,401)
+        headers={'Authorization':'Bearer '+server.KEY,'Origin':'https://untrusted.example'}
+        with self.assertRaises(urllib.error.HTTPError) as error:send(headers)
+        self.assertEqual(error.exception.code,403)
+        with send({'Authorization':'Bearer '+server.KEY}) as response:
+            self.assertEqual(json.load(response)['statuses'],{})
+
     def request(self, path, data=None, headers=None):
         req = urllib.request.Request(self.base+path, data=data, headers=headers or {})
         try: return urllib.request.build_opener(NoRedirect()).open(req)

@@ -1,4 +1,6 @@
 import re, uuid, mimetypes, shutil
+import sqlite3
+import ai_review
 import ai_proxy
 import file_open
 import render_profile
@@ -121,7 +123,7 @@ class Handler(BaseHTTPRequestHandler):
             values=urllib.parse.parse_qs(self.rfile.read(length).decode(errors='replace'))
             if hmac.compare_digest(values.get('key',[''])[0].encode(),KEY.encode()):return self.reply(303,b'',headers=self.cookie_headers())
             return self.reply(401,self.login_page('访问密钥无效，请重试。'),'text/html; charset=utf-8')
-        if p.path in ('/api/ai/edit','/api/ai/chat','/api/ai/revise'):
+        if p.path in ('/api/ai/edit','/api/ai/chat','/api/ai/revise','/api/ai/review'):
             if not self.authenticated(): return self.reply(401,{'error':'请先登录'})
             if self.headers.get('Sec-Fetch-Site')=='cross-site': return self.reply(403)
             origin=self.headers.get('Origin')
@@ -129,16 +131,18 @@ class Handler(BaseHTTPRequestHandler):
             if self.headers.get('Content-Type','').split(';')[0]!='application/json': return self.reply(415)
             try:
                 length=int(self.headers.get('Content-Length','0'))
-                if not 0 < length <= (262144 if p.path=='/api/ai/revise' else 100000): return self.reply(413)
+                if not 0 < length <= (262144 if p.path in ('/api/ai/revise','/api/ai/review') else 100000): return self.reply(413)
                 self.connection.settimeout(70)
                 payload=json.loads(self.rfile.read(length))
                 if not isinstance(payload,dict): raise ValueError('请求必须为对象')
                 file_id=payload.get('file','1')
                 if not isinstance(file_id,str): raise ValueError('文件标识无效')
                 file_open.resolve(DATA,file_id)
-                result=ai_proxy.revise(payload) if p.path=='/api/ai/revise' else ai_proxy.suggest(payload, chat=p.path=='/api/ai/chat')
+                result=ai_review.update(DATA,file_id,payload) if p.path=='/api/ai/review' else ai_proxy.revise(payload) if p.path=='/api/ai/revise' else ai_proxy.suggest(payload, chat=p.path=='/api/ai/chat')
             except FileNotFoundError: return self.reply(404)
             except (ValueError,TypeError): return self.reply(400,{'error':'请求内容无效'})
+            except (OSError,sqlite3.Error): return self.reply(507,{'error':'批注状态保存失败，请检查存储后重试'})
+            except ai_review.ReviewConflict as error: return self.reply(409,{'error':str(error)})
             except ai_proxy.AIError as error: return self.reply(503,{'error':str(error)})
             return self.reply(200,result)
         if p.path=='/api/files':

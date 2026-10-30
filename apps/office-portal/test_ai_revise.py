@@ -40,6 +40,14 @@ class RevisionPlanTests(unittest.TestCase):
             payload=self.payload();payload[field]=value
             with self.assertRaises(ValueError): ai_proxy.revise(payload)
 
+    def test_completion_requires_explicit_model_report(self):
+        with patch.object(ai_proxy,'_complete',return_value=self.result()):
+            result=ai_proxy.revise(self.payload())
+            self.assertEqual(result['comment_results'][0]['status'],'partial')
+        result=json.loads(self.result());result['comment_results']=[{'id':'1','status':'complete','reason':'全部完成'}]
+        with patch.object(ai_proxy,'_complete',return_value=json.dumps(result)):
+            self.assertEqual(ai_proxy.revise(self.payload())['comment_results'][0]['status'],'complete')
+
     def test_no_changes_and_unresolved_feedback(self):
         with patch.object(ai_proxy,'_complete',return_value=json.dumps({'summary':'','edits':[],'warnings':['批注无法定位']})):
             self.assertEqual(ai_proxy.revise(self.payload())['warnings'],['批注无法定位'])

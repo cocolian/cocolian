@@ -1,5 +1,5 @@
 """Default document+comments workflow against disposable live documents."""
-import base64, io, json, subprocess, sys, time, zipfile
+import base64, io, json, subprocess, sys, time, zipfile, tempfile
 from pathlib import Path
 from playwright.sync_api import sync_playwright, expect
 root=Path(__file__).resolve().parents[1]
@@ -18,6 +18,14 @@ with sync_playwright() as p:
  assert upload.status==201
  file_id=upload.json()['id'];page=context.new_page()
  if '--local-assets' in sys.argv:
+  sys.path.insert(0,str(root/'apps/office-portal'));import ai_review
+  review_store=tempfile.TemporaryDirectory();review_path=Path(review_store.name)
+  def review_api(route):
+   payload=route.request.post_data_json
+   try: route.fulfill(json=ai_review.update(review_path,payload['file'],payload))
+   except ai_review.ReviewConflict as e:route.fulfill(status=409,json={'error':str(e)})
+   except ValueError as e:route.fulfill(status=400,json={'error':str(e)})
+  page.route('**/api/ai/review',review_api)
   for asset in ('ai-editor.js','ai-panel.js','ai-panel.css','ai-session.css'):
    page.route('**/'+asset,lambda route,request,asset=asset:route.fulfill(path=str(root/'apps/office-portal'/asset)))
  page.goto('https://office.cocolian.cn/edit?user=Alice&file='+file_id)
@@ -64,7 +72,7 @@ with sync_playwright() as p:
  if '--real-model' not in sys.argv:
   def model(route):
    payload=route.request.post_data_json
-   assert len(payload['comments'])==2
+   assert len(payload['comments'])==(1 if '--review-lifecycle' in sys.argv and len(calls)>0 else 2)
    assert all(c['block_ids'] for c in payload['comments'])
    assert len(payload['blocks'])>=1
    assert sum(len(b['text']) for b in payload['blocks'])<=12000
@@ -77,12 +85,13 @@ with sync_playwright() as p:
    if '--changed-document' in sys.argv:
     frame.evaluate("app.map.sendUnoCommand('.uno:InsertAnnotation',{Text:{type:'string',value:'新增批注：需要重新生成'}})")
     page.wait_for_timeout(600)
-   candidate_edits=[{'block_id':'b1','before':'The project launch date is Monday.','after':'The project launch date is Tuesday.','comment_ids':[payload['comments'][0]['id']]},{'block_id':'b2','before':'The budget is 100 yuan.','after':'The budget is 200 yuan.','comment_ids':[payload['comments'][1]['id']]}]
+   first=payload['comments'][0]['id'];second=payload['comments'][-1]['id']
+   candidate_edits=([{'block_id':'b1','before':'The project launch date is Monday.','after':'The project launch date is Tuesday.','comment_ids':[first]}] if len(payload['comments'])==2 else [])+[{'block_id':'b2','before':'The budget is 100 yuan.','after':'The budget is 200 yuan.','comment_ids':[second]}]
    if '--history' in sys.argv and len(calls)>1:candidate_edits=[]
    if '--ambiguous-after' in sys.argv:
     candidate_edits[0].update(before='Monday',after='Tuesday')
     candidate_edits[1].update(before='100',after='Monday')
-   route.fulfill(json={'summary':'按两条批注修改日期和预算','warnings':[],'edits':[e for e in candidate_edits if e['block_id'] in {b['id'] for b in payload['blocks']}]})
+   route.fulfill(json={'comment_results':[{'id':c['id'],'status':'partial' if '--review-lifecycle' in sys.argv and len(calls)>1 else 'complete','reason':'仍需人工核对剩余要求' if '--review-lifecycle' in sys.argv and len(calls)>1 else ''} for c in payload['comments']],'summary':'按批注修改日期和预算','warnings':[],'edits':[e for e in candidate_edits if e['block_id'] in {b['id'] for b in payload['blocks']}]})
   page.route('**/api/ai/revise',model)
  page.locator('.ai-revise').click()
  expect(page.locator('.ai-send')).to_be_enabled(timeout=180000)
@@ -122,5 +131,70 @@ with sync_playwright() as p:
   frame.locator('#tab-navigator').click();frame.locator('#tab-office-session').click()
   assert frame.locator('#office-session-panel .office-session-record').count()==2
   print('PASS: native outline/search/session tabs, keyboard navigation, and retained execution history')
+ if '--cross-user' in sys.argv:
+  bob_context=browser.new_context(viewport={'width':1440,'height':1000})
+  assert bob_context.request.post('https://office.cocolian.cn/login',form={'key':key}).ok
+  bob=bob_context.new_page()
+  if '--local-assets' in sys.argv:
+   for asset in ('ai-editor.js','ai-panel.js','ai-panel.css','ai-session.css'):
+    bob.route('**/'+asset,lambda route,request,asset=asset:route.fulfill(path=str(root/'apps/office-portal'/asset)))
+   bob.route('**/api/ai/review',review_api)
+  bob.goto('https://office.cocolian.cn/edit?user=Bob&file='+file_id);bob.wait_for_timeout(10000)
+  bf=bob.frame(name='editor')
+  if bf.get_by_text('跳过',exact=True).count():bf.get_by_text('跳过',exact=True).click()
+  bf.wait_for_function('window.app?.officeAIReview');bf.evaluate('()=>app.officeAIReview.ready')
+  assert bf.evaluate("Object.values(app.officeAIReview.statuses).filter(x=>x.state==='pending_review').length")==2
+  bf.evaluate("app.map.sendUnoCommand('.uno:AcceptAllTrackedChanges')");bf.evaluate('()=>app.officeAIReview.queue')
+  assert not bf.evaluate('app.officeAIReview.error'),bf.evaluate('app.officeAIReview.error')
+  assert bf.evaluate("app.officeAIReview.adapter.comments().every(c=>['true',true].includes(c.object.sectionProperties.data.resolved))")
+  frame.evaluate('()=>app.officeAIReview.enqueue(()=>app.officeAIReview.sync())')
+  assert frame.evaluate("Object.values(app.officeAIReview.statuses).every(x=>x.state==='resolved')")
+  assert bf.evaluate("app.officeAIReview.adapter.comments().every(c=>c.object.sectionProperties.data.author==='Alice')")
+  print('PASS: Bob accepts Alice AI revisions; both views synchronize resolved comments and preserve original authors')
+  bob_context.close()
+ if '--review-lifecycle' in sys.argv:
+  page.reload();page.wait_for_timeout(10000);frame=page.frame(name='editor')
+  frame.wait_for_function('window.app?.officeAIReview')
+  frame.evaluate('()=>app.officeAIReview.ready')
+  def states():return frame.evaluate('Object.values(app.officeAIReview.statuses).map(x=>x.state)')
+  def unresolved():return frame.evaluate("app.officeAIReview.adapter.comments().filter(c=>!['true',true].includes(c.object.sectionProperties.data.resolved)).length")
+  assert states().count('pending_review')==2,states()
+  count=len(calls);page.locator('.ai-revise').click();expect(page.locator('.ai-send')).to_be_enabled(timeout=30000)
+  assert len(calls)==count and '等待审阅' in frame.locator('#office-session-panel .ai-status').last.inner_text()
+  rows=frame.evaluate('()=>app.officeAIReview.raw()')
+  project=[r for r in rows if 'proj' in r.get('description','')]
+  assert len(project)==2,rows
+  def review_one(row,accept=True):
+   command='AcceptTrackedChange' if accept else 'RejectTrackedChange'
+   frame.evaluate("(arg)=>app.map.sendUnoCommand('.uno:'+arg.command,{[arg.command]:{type:'unsigned short',value:arg.id}})",{'command':command,'id':row['index']})
+   frame.evaluate('()=>app.officeAIReview.queue')
+   assert not frame.evaluate('app.officeAIReview.error'),frame.evaluate('app.officeAIReview.error')
+  review_one(project[0]);assert unresolved()==2
+  assert states().count('pending_review')==2,states()
+  review_one(project[1]);assert unresolved()==1
+  assert states().count('resolved')==1,states()
+  frame.evaluate("app.map.sendUnoCommand('.uno:RejectAllTrackedChanges')")
+  frame.evaluate('()=>app.officeAIReview.queue')
+  assert unresolved()==1 and states().count('ready')==1,states()
+  ident=frame.evaluate("app.officeAIReview.adapter.comments().find(c=>!['true',true].includes(c.object.sectionProperties.data.resolved)).id")
+  def toggle():
+   frame.evaluate("(id)=>app.map.sendUnoCommand('.uno:ResolveComment',{Id:{type:'string',value:String(id)}})",ident)
+   frame.evaluate('()=>app.officeAIReview.queue')
+  toggle();assert unresolved()==0
+  toggle();assert unresolved()==1 and states().count('ready')==1,states()
+  page.locator('.ai-revise').click();expect(page.locator('.ai-send')).to_be_enabled(timeout=180000)
+  print('Partial:',frame.locator('#office-session-panel .ai-status').last.inner_text())
+  assert len(calls)==count+1
+  frame.evaluate("app.map.sendUnoCommand('.uno:AcceptAllTrackedChanges')")
+  frame.evaluate('()=>app.officeAIReview.queue')
+  assert unresolved()==1 and states().count('ready')==1,states()
+  frame.evaluate("app.map.sendUnoCommand('.uno:Undo')")
+  frame.evaluate('()=>app.officeAIReview.queue')
+  assert states().count('pending_review')==1 and unresolved()==1,states()
+  frame.evaluate("app.map.sendUnoCommand('.uno:AcceptAllTrackedChanges')")
+  frame.evaluate('()=>app.officeAIReview.queue')
+  assert states().count('ready')==1 and unresolved()==1,states()
+  print('PASS: undo restores pending links without resolving comments')
+  print('PASS: pending survives reload and skips repeat; partial acceptance stays pending; full acceptance resolves; reject and manual reopen restore ready; partial completion stays unresolved')
  print('PASS: automatic source+comments prompt, two revisions, original formatting, comments and untouched text retained')
  browser.close()

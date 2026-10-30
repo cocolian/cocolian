@@ -1,0 +1,1 @@
+[{"op":"test","path":"/spec/template/spec/containers/0/name","value":"collabora-wordmac"},{"op":"add","path":"/spec/template/spec/containers/0/args/-","value":"--o:per_document.redlining_as_comments=true"}]
