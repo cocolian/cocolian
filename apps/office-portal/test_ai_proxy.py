@@ -43,6 +43,21 @@ class ProxyTests(unittest.TestCase):
             self.assertEqual(result['suggestion'],'最终正文')
             self.assertNotIn('内部思考',json.dumps(result,ensure_ascii=False))
 
+    def test_chat_history_and_no_selection(self):
+        class Response:
+            def __enter__(self): return self
+            def __exit__(self,*args): pass
+            def read(self,size): return json.dumps({'choices':[{'message':{'content':'回答'}}]}).encode()
+        class Opener:
+            def open(self,request,timeout):
+                messages=json.loads(request.data)['messages']
+                assert messages[1]=={'role':'user','content':'之前的问题'}
+                assert messages[-1]['content']=='继续说明'
+                return Response()
+        with patch.dict(os.environ,{'AI_BASE_URL':'https://example.invalid/v1','AI_API_KEY':'test','AI_MODEL':'test'}),patch('urllib.request.build_opener',return_value=Opener()):
+            self.assertEqual(ai_proxy.suggest({'instruction':'继续说明','history':[{'role':'user','content':'之前的问题'}]},chat=True)['suggestion'],'回答')
+        with self.assertRaises(ValueError): ai_proxy.suggest({'instruction':'x','history':[{'role':'system','content':'x'}]},chat=True)
+
     def test_errors_redacted(self):
         with patch.dict(os.environ, {'AI_BASE_URL':'https://example.invalid/v1','AI_API_KEY':'test-secret','AI_MODEL':'test'}), patch('urllib.request.build_opener',side_effect=RuntimeError('test-secret')):
             with self.assertRaises(ai_proxy.AIError) as error: ai_proxy.suggest({'text':'原文','instruction':'润色'})

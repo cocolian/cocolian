@@ -1,6 +1,6 @@
 /* Same-origin adapter for the pinned OpenWen Collabora build. Fail closed. */
 window.OfficeAIEditor = class {
- constructor(frame) { this.frame=frame;this.epoch=0;this.padding=408; }
+ constructor(frame) { this.frame=frame;this.epoch=0; }
  connect() {
   const w=this.frame.contentWindow,a=w.app,m=a?.map,d=m?._docLayer;
   if(!d||d._docType!=='text'||!a.activeDocument?.activeLayout)throw Error('等待 Writer 文档加载');
@@ -8,30 +8,8 @@ window.OfficeAIEditor = class {
   this.app=a;this.map=m;this.layer=d;this.epoch++;
   const original=d._onTextSelectionMsg;
   if(typeof original!=='function')throw Error('此编辑器版本不支持选区绑定');
-  d._onTextSelectionMsg=(msg)=>{this.selection=msg;this.epoch++;return original.call(d,msg);};
-  this.layout();
+  d._onTextSelectionMsg=(msg)=>{if(this.selection!==msg){this.selection=msg;this.epoch++;}return original.call(d,msg);};
  }
- layout() {
-  const a=this.app,l=a?.activeDocument?.activeLayout;if(!l||l.type!=='ViewLayoutWriter')return;
-  if(l.officeAIPaddingAdapter)return;
-  l.officeAIPaddingAdapter=true;
-  // Extend the actual layout extent used by both wheel limits and scrollbar.
-  const original=l.refreshScrollProperties;
-  l.refreshScrollProperties=()=>{
-   const size=l._viewSize;
-   if(size){
-    const previous=l.officeAILastSize;
-    const base=previous&&size.pY===previous.padded?previous.base:size.pY;
-    const anchor=l.getDocumentAnchorSection();
-    const padded=Math.max(base,anchor.size[1])+this.padding*a.dpiScale;
-    const next=size.clone();next.pY=padded;l._viewSize=next;
-    l.officeAILastSize={base,padded};
-   }
-   return original.call(l);
-  };
-  l.refreshScrollProperties();a.sectionContainer.requestReDraw();
- }
- reserve(height) {this.padding=height+48;if(this.app){this.layout();this.app.activeDocument.activeLayout.refreshScrollProperties();this.app.sectionContainer.requestReDraw();}}
  comments() {
   this.connect();const list=this.app.sectionContainer.getSectionWithName(this.app.CSections.CommentList.name);
   return (list?.sectionProperties.commentList||[]).filter(c=>!c.sectionProperties.data.trackchange).map(c=>({id:c.sectionProperties.data.id,text:c.sectionProperties.contentText?.textContent||'',object:c,list}));

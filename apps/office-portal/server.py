@@ -121,7 +121,7 @@ class Handler(BaseHTTPRequestHandler):
             values=urllib.parse.parse_qs(self.rfile.read(length).decode(errors='replace'))
             if hmac.compare_digest(values.get('key',[''])[0].encode(),KEY.encode()):return self.reply(303,b'',headers=self.cookie_headers())
             return self.reply(401,self.login_page('访问密钥无效，请重试。'),'text/html; charset=utf-8')
-        if p.path=='/api/ai/edit':
+        if p.path in ('/api/ai/edit','/api/ai/chat'):
             if not self.authenticated(): return self.reply(401,{'error':'请先登录'})
             if self.headers.get('Sec-Fetch-Site')=='cross-site': return self.reply(403)
             origin=self.headers.get('Origin')
@@ -136,7 +136,7 @@ class Handler(BaseHTTPRequestHandler):
                 file_id=payload.get('file','1')
                 if not isinstance(file_id,str): raise ValueError('文件标识无效')
                 file_open.resolve(DATA,file_id)
-                result=ai_proxy.suggest(payload)
+                result=ai_proxy.suggest(payload, chat=p.path=='/api/ai/chat')
             except FileNotFoundError: return self.reply(404)
             except (ValueError,TypeError): return self.reply(400,{'error':'请求内容无效'})
             except ai_proxy.AIError as error: return self.reply(503,{'error':str(error)})
