@@ -107,6 +107,7 @@ window.OfficeAIEditor = class {
     if(signal?.aborted)throw Error('已停止修改');
     const current=await this.readDocument();
     if(current.layer!==snapshot.layer||current.fingerprint!==expected)throw Error('文档或批注已变化，请重新生成修改');
+    if(current.blocks.map(b=>b.text).join('\n').split(edit.before).length!==2)throw Error('原文位置不唯一或已变化，已停止修改');
     const target=await this.locate(edit.before);
     if(signal?.aborted)throw Error('已停止修改');
     await this.apply(target,edit.after);

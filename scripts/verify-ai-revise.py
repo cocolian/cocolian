@@ -42,12 +42,18 @@ with sync_playwright() as p:
     frame.evaluate("app.map.sendUnoCommand('.uno:InsertAnnotation',{Text:{type:'string',value:'新增批注：需要重新生成'}})")
     page.wait_for_timeout(600)
    candidate_edits=[{'block_id':'b1','before':'The project launch date is Monday.','after':'The project launch date is Tuesday.','comment_ids':[payload['comments'][0]['id']]},{'block_id':'b2','before':'The budget is 100 yuan.','after':'The budget is 200 yuan.','comment_ids':[payload['comments'][1]['id']]}]
+   if '--ambiguous-after' in sys.argv:
+    candidate_edits[0].update(before='Monday',after='Tuesday')
+    candidate_edits[1].update(before='100',after='Monday')
    route.fulfill(json={'summary':'按两条批注修改日期和预算','warnings':[],'edits':[e for e in candidate_edits if e['block_id'] in {b['id'] for b in payload['blocks']}]})
   page.route('**/api/ai/revise',model)
  assert page.locator('.ai-mode').input_value()=='document'
  page.locator('.ai-revise').click()
  expect(page.locator('.ai-send')).to_be_enabled(timeout=180000)
  result=page.locator('.ai-assistant .ai-message-text').last.inner_text();print(result)
+ if '--ambiguous-after' in sys.argv:
+  assert '已确认写入 1 处' in result and '不唯一' in result
+  print('PASS: a preceding edit cannot create an ambiguous target for the next write');browser.close();sys.exit(0)
  if '--changed-document' in sys.argv:
   assert '文档或批注已变化' in result and '已确认写入 0 处' in result
   print('PASS: changed document/comments block automatic writes');browser.close();sys.exit(0)
