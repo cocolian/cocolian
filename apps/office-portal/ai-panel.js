@@ -67,10 +67,16 @@
  }
  const sessions=new SessionLog();const review=new OfficeAIReview(adapter,(...args)=>sessions.review(...args));let currentTask=null;
  const panel=document.createElement('section');panel.id='office-ai';panel.setAttribute('aria-label','AI 批注修改');
- panel.innerHTML=`<button type="button" class="ai-mini" hidden aria-label="展开修改框" aria-expanded="false">✦ 批注修改</button><div class="ai-shell"><header><div><span class="ai-spark" aria-hidden="true">✦</span><strong>按批注修改</strong></div><div><button type="button" class="ai-sessions" title="查看会话记录">会话</button><button type="button" class="ai-collapse" aria-label="收起修改框" aria-expanded="true" title="收起">⌄</button></div></header><form class="ai-composer"><label class="ai-input-label" for="ai-input">补充修改要求，可留空</label><textarea id="ai-input" class="ai-instruction" maxlength="2000" rows="1" placeholder="补充修改要求，可留空"></textarea><div class="ai-actions"><small>自动读取原文和全部未解决批注</small><button type="button" class="ai-cancel" hidden>停止</button><button type="submit" class="ai-send ai-revise">按批注修改 <span aria-hidden="true">↑</span></button></div></form></div>`;
+ panel.tabIndex=-1;
+ panel.innerHTML=`<div class="ai-shell"><form class="ai-composer"><div class="ai-toolbar">
+  <span class="ai-grip" title="拖动输入框" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 8h14M5 12h14M5 16h14"/></svg></span>
+  <button type="button" class="ai-reset" aria-label="恢复默认位置" title="恢复默认位置"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11a8 8 0 1 1 2 6M4 5v6h6"/></svg></button>
+  <button type="button" class="ai-expand" aria-label="展开输入区" title="展开输入区" aria-pressed="false" aria-controls="ai-input"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6m0-6-6 6M10 20H4v-6m0 6 6-6"/></svg></button>
+ </div><label class="ai-input-label" for="ai-input">输入写作或修改要求</label><textarea id="ai-input" class="ai-instruction" maxlength="2000" rows="1" placeholder="输入写作或修改要求"></textarea><div class="ai-actions"><button type="button" class="ai-cancel" hidden>停止</button><button type="submit" class="ai-send ai-revise">发送 <span aria-hidden="true">↑</span></button></div></form></div>`;
  document.body.append(panel);
- const find=s=>panel.querySelector(s),input=find('.ai-instruction'),send=find('.ai-send'),cancel=find('.ai-cancel'),mini=find('.ai-mini');
- let controller=null,collapsed=false,positionRequest=0,observedCanvas=null;
+ const find=s=>panel.querySelector(s),input=find('.ai-instruction'),send=find('.ai-send'),cancel=find('.ai-cancel');
+ let controller=null,positionRequest=0,observedCanvas=null;
+ let floatingPosition=null,drag=null;
  const canvasObserver=new ResizeObserver(()=>schedulePosition());
  function position(){
   positionRequest=0;
@@ -82,18 +88,56 @@
   const available=Math.max(0,Math.min(innerWidth,area.right)-Math.max(0,area.left));
   const width=Math.min(560,Math.max(0,innerWidth-24),Math.max(160,available-32));
   const center=Math.max(width/2+12,Math.min(innerWidth-width/2-12,(area.left+area.right)/2));
-  panel.style.left=center+'px';panel.style.width=width+'px';panel.style.bottom=Math.max(42,innerHeight-area.bottom+16)+'px';
+  panel.style.width=width+'px';
+  if(floatingPosition){
+   const left=Math.max(0,Math.min(innerWidth-width,floatingPosition.left));
+   const top=Math.max(0,Math.min(innerHeight-panel.offsetHeight,floatingPosition.top));
+   panel.style.left=left+'px';panel.style.top=top+'px';
+   panel.style.bottom='auto';panel.style.transform='none';
+  }else{
+   panel.style.top='';panel.style.transform='';
+   panel.style.left=center+'px';panel.style.bottom=Math.max(42,innerHeight-area.bottom+16)+'px';
+  }
  }
  function schedulePosition(){if(!positionRequest)positionRequest=requestAnimationFrame(position);}
- function fold(value){collapsed=value;panel.classList.toggle('is-collapsed',value);mini.hidden=!value;find('.ai-shell').hidden=value;find('.ai-collapse').setAttribute('aria-expanded',String(!value));if(!value)input.focus();schedulePosition();}
- find('.ai-collapse').onclick=()=>fold(true);mini.onclick=()=>fold(false);
+ const dragSurface=find('.ai-toolbar'),expand=find('.ai-expand');
+ find('.ai-reset').onclick=()=>{floatingPosition=null;schedulePosition();};
+ expand.onclick=()=>{
+  const expanded=panel.classList.toggle('ai-expanded');
+  expand.setAttribute('aria-pressed',String(expanded));
+  expand.title=expanded?'收起输入区':'展开输入区';
+  expand.setAttribute('aria-label',expand.title);
+  fitInput();
+ };
+ dragSurface.addEventListener('pointerdown',event=>{
+  if(event.button!==0||drag||event.target.closest('button'))return;
+  const bounds=panel.getBoundingClientRect();
+  drag={id:event.pointerId,x:event.clientX-bounds.left,y:event.clientY-bounds.top};
+  dragSurface.setPointerCapture(event.pointerId);
+  panel.classList.add('ai-dragging');
+  event.preventDefault();
+ });
+ dragSurface.addEventListener('pointermove',event=>{
+  if(event.pointerId!==drag?.id)return;
+  floatingPosition={left:event.clientX-drag.x,top:event.clientY-drag.y};
+  schedulePosition();
+ });
+ for(const type of ['pointerup','pointercancel','lostpointercapture']){
+  dragSurface.addEventListener(type,event=>{
+   if(event.pointerId!==drag?.id)return;
+   drag=null;panel.classList.remove('ai-dragging');
+  });
+ }
  function stage(name,text){
   panel.dataset.state=name;sessions.update(currentTask,name,text);
-  mini.textContent=['read','generate','apply'].includes(name)?'✦ 批注修改 · 进行中':'✦ 批注修改';
  }
  function report(text){sessions.report(currentTask,text);}
- find('.ai-sessions').onclick=()=>sessions.show();
- function fitInput(){input.style.height='auto';input.style.height=Math.min(120,Math.max(36,input.scrollHeight))+'px';}
+ function fitInput(){
+  const expanded=panel.classList.contains('ai-expanded');
+  input.style.height='auto';
+  input.style.height=Math.min(expanded?280:120,Math.max(expanded?160:48,input.scrollHeight+2))+'px';
+  schedulePosition();
+ }
  input.oninput=fitInput;
  cancel.onclick=()=>controller?.abort();
  find('form').onsubmit=async e=>{
@@ -106,7 +150,7 @@
    const snapshot=await adapter.readDocument();
    const comments=await review.begin(snapshot.comments);
    // Return typing focus to the optional instruction instead of the selected document.
-   (collapsed?mini:find('.ai-collapse')).focus();
+   panel.focus({preventScroll:true});
    if(snapshot.comments.length&&!comments.length)throw Error('现有批注正在等待审阅，请先接受或拒绝文档修订；待核对项可人工解决后重新打开。');
    if(!comments.length&&!instruction)throw Error('没有未解决批注，请补充修改要求后再试。');
    if(signal.aborted)throw new DOMException('已停止','AbortError');

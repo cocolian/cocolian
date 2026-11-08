@@ -1,5 +1,116 @@
-#office-ai{position:fixed;left:50%;bottom:48px;transform:translateX(-50%);width:min(560px,calc(100vw - 24px));max-height:calc(100dvh - 120px);z-index:10001;box-sizing:border-box;color:#323431;font:13px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}#office-ai *{box-sizing:border-box}#office-ai [hidden]{display:none!important}#office-ai .ai-shell{background:rgba(255,255,253,.97);border:1px solid #dedfd9;border-radius:18px;box-shadow:0 10px 36px #1b241a18,0 2px 8px #1b241a0c;overflow:auto;max-height:inherit}#office-ai header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px 0 18px}#office-ai header>div{display:flex;gap:7px;align-items:center}#office-ai header strong{font-size:12px;font-weight:600;color:#777b73}#office-ai .ai-spark{font-size:16px;color:#727a70}#office-ai button{font:inherit;border:0;cursor:pointer;border-radius:8px;color:inherit;background:transparent}#office-ai button:hover{background:#eeefe9}#office-ai button:focus-visible,#office-ai textarea:focus-visible,#office-ai summary:focus-visible{outline:2px solid #7094b4;outline-offset:2px}#office-ai .ai-collapse{width:28px;height:26px;font-size:19px;color:#858a80}#office-ai form{padding:4px 16px 12px;margin:0}#office-ai textarea{font-size:14px;line-height:1.6;font-family:inherit;display:block;width:100%;height:40px;min-height:36px;max-height:120px;resize:none;padding:6px 0;border:0;outline:none;background:transparent;color:#30362e}#office-ai textarea::placeholder{color:#a0a49b}#office-ai textarea:focus-visible{outline-offset:0;border-radius:5px}#office-ai .ai-actions{display:flex;align-items:center;gap:8px;padding-top:6px}#office-ai .ai-actions small{flex:1;min-width:0;font-size:11px;color:#959a8f}#office-ai .ai-send{background:#343d33;color:#fff;white-space:nowrap;padding:7px 12px;border-radius:10px;font-size:12px;font-weight:500}#office-ai .ai-send:hover{background:#475144}#office-ai .ai-send span{margin-left:8px}#office-ai button:disabled{opacity:.45;cursor:wait}#office-ai .ai-cancel{font-size:12px;padding:6px 8px}#office-ai .ai-mini{display:block;max-width:100%;margin:auto;border:1px solid #dedfd7;border-radius:24px;background:#fffffd;box-shadow:0 4px 20px #22331b18;padding:9px 17px;font-size:12px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;color:#6f7967}#office-ai .ai-input-label{position:absolute;width:1px;height:1px;overflow:hidden;clip-path:inset(50%)}@media(max-width:500px){#office-ai .ai-actions small{font-size:10px}#office-ai .ai-send{padding:7px 9px}#office-ai header{padding-left:14px}#office-ai form{padding-inline:12px}}
+#office-ai {
+  --ai-ink: #202b3c;
+  --ai-muted: #5b6778;
+  --ai-accent: #086ce5;
+  --ai-line: #dce3ee;
+  position: fixed;
+  left: 50%;
+  bottom: 48px;
+  transform: translateX(-50%);
+  width: min(560px, calc(100vw - 24px));
+  max-height: calc(100dvh - 120px);
+  z-index: 10001;
+  color: var(--ai-ink);
+  font: 13px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
 
-#office-ai.is-collapsed{pointer-events:none}#office-ai.is-collapsed .ai-mini{pointer-events:auto}
+#office-ai, #office-ai * { box-sizing: border-box; }
+#office-ai [hidden] { display: none !important; }
 
-#office-ai .ai-sessions{font-size:11px;color:#858e7e;padding:4px 7px}
+#office-ai .ai-shell {
+  max-height: inherit;
+  overflow: auto;
+  background: #fff;
+  border: 1px solid var(--ai-line);
+  border-radius: 14px;
+  box-shadow: 0 12px 36px #18315116, 0 2px 8px #1831510b;
+}
+
+#office-ai button {
+  font: inherit;
+  border: 0;
+  cursor: pointer;
+  border-radius: 8px;
+  color: inherit;
+  background: transparent;
+}
+
+#office-ai button:hover { background: #edf4ff; }
+#office-ai button:focus-visible { outline: 2px solid var(--ai-accent); outline-offset: 2px; }
+#office-ai .ai-shell:focus-within { border-color: var(--ai-accent); }
+#office-ai form { padding: 0 10px 8px; margin: 0; }
+#office-ai textarea {
+  display: block;
+  width: 100%;
+  min-height: 48px;
+  max-height: 120px;
+  resize: none;
+  padding: 10px 6px 4px;
+  border: 0;
+  background: transparent;
+  color: var(--ai-ink);
+  font: inherit;
+  font-size: 14px;
+  line-height: 1.6;
+}
+#office-ai textarea::placeholder { color: #687588; }
+#office-ai textarea:focus { outline: none; }
+
+#office-ai .ai-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 0;
+  color: var(--ai-muted);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+#office-ai.ai-dragging .ai-toolbar { cursor: grabbing; }
+#office-ai .ai-toolbar button,
+#office-ai .ai-grip {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+}
+#office-ai .ai-toolbar svg {
+  width: 18px;
+  height: 18px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.7;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+#office-ai .ai-expand { margin-left: auto; }
+#office-ai.ai-expanded textarea { max-height: 280px; }
+
+#office-ai .ai-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding-top: 4px;
+}
+
+#office-ai .ai-send {
+  min-height: 34px;
+  padding: 6px 14px;
+  border-radius: 18px;
+  background: var(--ai-accent);
+  color: #fff;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 600;
+}
+#office-ai .ai-send:hover { background: #075bbc; }
+#office-ai .ai-send span { margin-left: 6px; }
+#office-ai button:disabled { opacity: .55; cursor: wait; }
+#office-ai .ai-cancel { padding: 6px 8px; font-size: 12px; }
+
+#office-ai .ai-input-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+#office-ai:focus { outline: none; }
