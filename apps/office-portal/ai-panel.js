@@ -1,6 +1,47 @@
 (() => {
  'use strict';
  const frame=document.querySelector('iframe[name=editor]');if(!frame)return;
+ function installExternalLinkNotice(){
+  const doc=frame.contentDocument,win=doc?.defaultView;
+  if(!win||!doc.body)return;
+  const message='This document has links to external content.';
+  let viewport=null,notice=null;
+  function positionNotice(){
+   if(!notice?.isConnected||!viewport?.isConnected)return;
+   const rect=viewport.getBoundingClientRect();
+   notice.style.setProperty('--office-notice-left',rect.left+rect.width/2+'px');
+   notice.style.setProperty('--office-notice-top',rect.top+12+'px');
+   notice.style.setProperty('--office-notice-width',Math.max(0,rect.width-24)+'px');
+  }
+  const resize=new win.ResizeObserver(positionNotice);
+  function findNotice(){
+   const candidate=doc.querySelector('#snackbar.jsdialog-window');
+   if(!candidate||candidate===notice)return;
+   const label=candidate?.querySelector('#snackbar-container #label')?.textContent.trim();
+   if(!label||![message,'此文档包含指向外部内容的链接。',win._?.(message)].includes(label))return;
+   const area=doc.getElementById('document-container');
+   if(!area)return;
+   if(area!==viewport){resize.disconnect();viewport=area;resize.observe(area);}
+   notice=candidate;
+   positionNotice();
+   // Use CSSOM declarations because the editor's CSP can block injected stylesheets.
+   for(const [property,value] of Object.entries({
+    position:'fixed',inset:'var(--office-notice-top) auto auto var(--office-notice-left)',
+    margin:'0',transform:'translateX(-50%)',width:'max-content',
+    'max-width':'var(--office-notice-width)'
+   }))notice.style.setProperty(property,value,'important');
+   for(const element of notice.querySelectorAll('.ui-dialog-content, #snackbar-container')){
+    element.style.setProperty('min-width','0','important');
+    element.style.setProperty('max-width','var(--office-notice-width)','important');
+   }
+   notice.querySelector('#label').style.whiteSpace='normal';
+   notice.classList.add('office-external-link-notice');
+  }
+  new win.MutationObserver(findNotice).observe(doc.body,{childList:true,subtree:true});
+  win.addEventListener('resize',positionNotice);
+  findNotice();
+ }
+ frame.addEventListener('load',installExternalLinkNotice);
  const adapter=new OfficeAIEditor(frame);
  // Keep execution history inside Collabora's existing left navigation.
  class SessionLog {
